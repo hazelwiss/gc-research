@@ -1,0 +1,4 @@
+CompileFlags:
+  Add:
+    - "-I/opt/devkitpro/libogc/include/"
+
