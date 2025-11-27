@@ -1,5 +1,6 @@
 #include "ogc/gu.h"
 #include "ogc/gx.h"
+#include "ogc/pad.h"
 #include <gccore.h>
 #include <malloc.h>
 #include <string.h>
@@ -82,6 +83,7 @@ static struct Light {
 
 };
 
+static f32 light_rot_speed_mul = 1.0;
 static f32 light_rot_speed = 0.03;
 static f32 light_rot = 0.0;
 static f32 light_offs_z = -325;
@@ -226,6 +228,40 @@ int main() {
   GX_LoadProjectionMtx(perspective, GX_PERSPECTIVE);
 
   while (1) {
+    PAD_ScanPads();
+
+    if (PAD_ButtonsDown(0) & PAD_BUTTON_A) {
+      light_rot_speed_mul = (~(int)light_rot_speed_mul) & 1;
+    }
+
+    if (PAD_ButtonsDown(0) & PAD_BUTTON_UP) {
+      light_rot_speed += 0.01;
+    }
+
+    if (PAD_ButtonsDown(0) & PAD_BUTTON_DOWN) {
+      light_rot_speed -= 0.01;
+    }
+
+    s8 stickx = PAD_StickX(0);
+    s8 sticky = PAD_StickY(0);
+
+    s8 substickx = PAD_SubStickX(0);
+    s8 substicky = PAD_SubStickY(0);
+
+    float div = 250;
+
+    if ((stickx < -8) || (stickx > 8))
+      light_brightness += (float)stickx / div;
+
+    if ((sticky < -8) || (sticky > 8))
+      light_offs_z += (float)sticky / div;
+
+    if ((substickx < -8) || (substickx > 8))
+      light_range += (float)substickx / div;
+
+    if ((substicky < -8) || (substicky > 8))
+      light_spread += (float)substicky / div;
+
     Mtx model, modelview;
     GX_SetViewport(0, 0, rmode->fbWidth, rmode->efbHeight, 0, 1);
 
@@ -285,6 +321,6 @@ int main() {
     VIDEO_WaitVSync();
     fb ^= 1; // flip framebuffer
 
-    light_rot += light_rot_speed;
+    light_rot += light_rot_speed * light_rot_speed_mul;
   }
 }
