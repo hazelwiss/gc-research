@@ -1,0 +1,8 @@
+/tools/target
+
+# Ingore build artifacts.
+*.dol
+*.o
+*.d
+*.elf
+*.elf.map

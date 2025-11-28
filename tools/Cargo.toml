@@ -1,0 +1,12 @@
+[package]
+name = "tools"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "obj_to_c"
+path = "obj_to_c/main.rs"
+
+[dependencies]
+tobj = "4.0.3"
+argp = "0.4.0"
