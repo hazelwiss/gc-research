@@ -278,6 +278,8 @@ int main() {
     GX_SetVtxDesc(GX_VA_NRM, GX_DIRECT);
     GX_SetVtxDesc(GX_VA_CLR0, GX_DIRECT);
 
+    int subdivide_quad = 100;
+
     for (int i = 0; i < sizeof(quads) / sizeof(*quads); ++i) {
       struct Quad *quad = &quads[i];
 
@@ -288,23 +290,32 @@ int main() {
       guMtxConcat(view, model, modelview);
       GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 
-      GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
-      // Top Left
-      GX_Position3f32(-1.0f, 1.0f, 0.0f);
-      GX_Normal3f32(0.0, 0.0, 1.0);
-      GX_Color3u8(quad->color.r, quad->color.g, quad->color.b);
-      // Top Right
-      GX_Position3f32(1.0f, 1.0f, 0.0f);
-      GX_Normal3f32(0.0, 0.0, 1.0);
-      GX_Color3u8(quad->color.r, quad->color.g, quad->color.b);
-      // Bottom Right
-      GX_Position3f32(1.0f, -1.0f, 0.0f);
-      GX_Normal3f32(0.0, 0.0, 1.0);
-      GX_Color3u8(quad->color.r, quad->color.g, quad->color.b);
-      // Bottom Left
-      GX_Position3f32(-1.0f, -1.0f, 0.0f);
-      GX_Normal3f32(0.0, 0.0, 1.0);
-      GX_Color3u8(quad->color.r, quad->color.g, quad->color.b);
+      GX_Begin(GX_QUADS, GX_VTXFMT0, 4 * subdivide_quad * subdivide_quad);
+      for (int y = 0; y < subdivide_quad; ++y) {
+        for (int x = 0; x < subdivide_quad; ++x) {
+          float xs = (((float)x / subdivide_quad) * 2.0) - 1.0;
+          float xe = (((float)(x + 1) / subdivide_quad) * 2.0) - 1.0;
+          float ys = (((float)y / subdivide_quad) * 2.0) - 1.0;
+          float ye = (((float)(y + 1) / subdivide_quad) * 2.0) - 1.0;
+
+          // Top Left
+          GX_Position3f32(xs, ys, 0.0f);
+          GX_Normal3f32(0.0, 0.0, 1.0);
+          GX_Color3u8(quad->color.r, quad->color.g, quad->color.b);
+          // Top Right
+          GX_Position3f32(xe, ys, 0.0f);
+          GX_Normal3f32(0.0, 0.0, 1.0);
+          GX_Color3u8(quad->color.r, quad->color.g, quad->color.b);
+          // Bottom Right
+          GX_Position3f32(xe, ye, 0.0f);
+          GX_Normal3f32(0.0, 0.0, 1.0);
+          GX_Color3u8(quad->color.r, quad->color.g, quad->color.b);
+          // Bottom Left
+          GX_Position3f32(xs, ye, 0.0f);
+          GX_Normal3f32(0.0, 0.0, 1.0);
+          GX_Color3u8(quad->color.r, quad->color.g, quad->color.b);
+        }
+      }
       GX_End();
     }
 
