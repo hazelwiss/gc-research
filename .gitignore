@@ -1,4 +1,5 @@
 /tools/target
+.clangd
 
 # Ingore build artifacts.
 *.dol

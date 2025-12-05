@@ -4,11 +4,15 @@
 //
 // This file itself does not contain any actual tests.
 
+#include <ogc/audio.h>
 #include <ogc/console.h>
+#include <ogc/dsp.h>
 #include <ogc/system.h>
 #include <ogc/video.h>
 #include <stdint.h>
 #include <stdio.h>
+
+#include <dspemit/dspemit.h>
 
 static GXRModeObj *rmode;
 static void *xfb = NULL;
@@ -16,60 +20,13 @@ static void *xfb = NULL;
 static struct task {
   const char *name;
 } tasks[] = {};
-
 static int tasks_remaing = sizeof(tasks) / sizeof(struct task);
 
-union dsp_csr {
-  uint16_t full;
-  struct {
-    uint16_t res0 : 1;
-    uint16_t piint : 1;
-    uint16_t halt : 1;
-    uint16_t aidint : 1;
-    uint16_t aidintmask : 1;
-    uint16_t arint : 1;
-    uint16_t arintmask : 1;
-    uint16_t dspint : 1;
-    uint16_t dspintmask : 1;
-    uint16_t dma_status : 1;
-    uint16_t : 1;
-    uint16_t res1 : 1;
-  };
-};
-
-static volatile uint16_t *const dspregs = (void *)0xCC005000;
-
-static void dsp_halt(void) {
-  union dsp_csr csr;
-  csr.full = dspregs[5];
-  csr.halt = 1;
-  dspregs[5] = csr.full;
-}
-
-static void dsp_unhalt(void) {
-  union dsp_csr csr;
-  csr.full = dspregs[5];
-  csr.halt = 0;
-  dspregs[5] = csr.full;
-}
-
-static void dsp_reset(void) {
-  union dsp_csr csr;
-  csr.full = dspregs[5];
-  csr.res0 = 1;
-  dspregs[5] = csr.full;
-}
-
-static void dsp_init(void) {
-  union dsp_csr csr;
-  csr.full = dspregs[5];
-  csr.res0 = 1;
-  dspregs[5] = csr.full;
-  
-}
+static uint8_t buf[256];
 
 int main() {
   VIDEO_Init();
+  DSP_Init();
 
   rmode = VIDEO_GetPreferredMode(NULL);
 
@@ -88,6 +45,18 @@ int main() {
 
   printf("DSP fuzzer\n");
   VIDEO_WaitVSync();
+
+  dsptask_t dsp_task;
+  dsp_task.prio = 255;
+  dsp_task.iram_maddr = (void *)MEM_VIRTUAL_TO_PHYSICAL(buf);
+  dsp_task.iram_len = sizeof(buf);
+  dsp_task.iram_addr = 0;
+  dsp_task.init_vec = 0;
+  dsp_task.res_cb = NULL;
+  dsp_task.req_cb = NULL;
+  dsp_task.init_cb = NULL;
+  dsp_task.done_cb = NULL;
+  DSP_AddTask(&dsp_task);
 
   // Wait until all tasks are complete
   while (tasks_remaing > 0)
