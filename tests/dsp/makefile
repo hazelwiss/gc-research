@@ -1,9 +1,9 @@
 include ../../common/build.mk
 
-build: fuzzer.dol
+build: fuzzer-main.dol
 
-fuzzer.dol: fuzzer.elf
-fuzzer.elf: fuzzer.o
+fuzzer-main.dol: fuzzer-main.elf
+fuzzer-main.elf: fuzzer-main.o fuzzer.o inputsgen.o
 
 clean:
 	@rm -f *.elf *.dol *.o *.map *.d
