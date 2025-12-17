@@ -7,6 +7,11 @@ edition = "2024"
 name = "obj_to_c"
 path = "obj_to_c/main.rs"
 
+[[bin]]
+name = "fuzzer-client"
+path = "fuzzer-client/main.rs"
+
 [dependencies]
 tobj = "4.0.3"
 argp = "0.4.0"
+bytemuck = { version = "1.22.0", features = ["min_const_generics", "derive", "extern_crate_std"] }

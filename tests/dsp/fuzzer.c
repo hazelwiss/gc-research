@@ -578,7 +578,8 @@ static struct task {
     },
 };
 
-void run(callback_t cbk) {
+void run(callback_t cbk, callback_new_test_t cbk_new_test,
+         callback_skipped_test_t cbk_skipped_test, size_t line_start) {
   size_t total_tasks = (sizeof(tasks) / sizeof(*tasks));
   size_t skipped = 0;
   time_t tc, start = time(NULL);
@@ -588,16 +589,18 @@ void run(callback_t cbk) {
 
   for (int k = 0, i = 0; i < total_tasks; ++i, k = 0) {
     struct task *task = &tasks[i];
+    cbk_new_test(task->name, inputs_cnt);
 
     while (k < inputs_cnt) {
       tc = time(NULL);
-      printf("\x1b[2;0H");
+      printf("\x1b[%d;0H", line_start);
       printf("seconds lapsed %d\n", (int)difftime(tc, start));
       printf("complete: %d / %u\n", i, total_tasks);
       printf("skipped: %d / %u\n", skipped, total_tasks);
       printf("fuzzing %s %d / %u...\n", task->name, k, inputs_cnt);
 
       if (task->emit == NULL) {
+        cbk_skipped_test();
         skipped += 1;
         break;
       }
@@ -644,5 +647,8 @@ void run(callback_t cbk) {
       }
     }
   }
+
+  printf("\e[1;1H\e[2J");
+  printf("\x1b[0;0H");
   printf("fuzzing complete! skipped %d / %u\n", skipped, total_tasks);
 }

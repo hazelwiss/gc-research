@@ -1,7 +1,8 @@
 MAKEFILES := $(shell find . -mindepth 2 -name makefile)
+MAKEFILES := $(MAKEFILES) $(shell find . -mindepth 2 -name "*.mk")
 
 build:
-	@for i in $(MAKEFILES); do $(MAKE) -C `dirname $$i` || exit 1; done;
+	@for i in $(MAKEFILES); do $(MAKE) -C `dirname $$i` -f `basename $$i` || exit 1; done;
 
 clean:
-	@for i in $(MAKEFILES); do $(MAKE) -C `dirname $$i` clean || exit 1; done;
+	@for i in $(MAKEFILES); do $(MAKE) -C `dirname $$i` -f `basename $$i` clean || exit 1; done;
