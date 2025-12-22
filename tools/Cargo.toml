@@ -3,6 +3,9 @@ name = "tools"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+path = "lib/lib.rs"
+
 [[bin]]
 name = "obj_to_c"
 path = "obj_to_c/main.rs"
@@ -11,7 +14,13 @@ path = "obj_to_c/main.rs"
 name = "fuzzer-client"
 path = "fuzzer-client/main.rs"
 
+[[bin]]
+name = "fuzzer-gen-tests"
+path = "fuzzer-gen-tests/main.rs"
+
+
 [dependencies]
 tobj = "4.0.3"
 argp = "0.4.0"
 bytemuck = { version = "1.22.0", features = ["min_const_generics", "derive", "extern_crate_std"] }
+rand = "0.9.2"

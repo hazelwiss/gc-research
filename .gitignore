@@ -1,6 +1,9 @@
 /tools/target
 .clangd
 
+# Ignore generated files
+*/.gen
+
 # Ingore build artifacts.
 *.dol
 *.o

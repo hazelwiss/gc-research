@@ -16,8 +16,14 @@ struct ResultData {
     gpr: [u16; 32],
 }
 
+struct Output {
+    name: String,
+    state: Vec<ResultData>,
+}
+
 fn main() {
     let adr = std::env::args().nth(1).expect("expected address argument");
+    let output_file = std::env::args().nth(2).expect("need output file argument");
 
     let mut receiver = TcpStream::connect(adr).expect("failed to establish socket");
 
@@ -26,6 +32,8 @@ fn main() {
     let mut cur_ctr = 0;
     let mut cur_len = 0;
     let mut cur_name = "".to_string();
+    let mut outputs = vec![];
+    let mut results = vec![];
     loop {
         recv_ctr += receiver
             .read(&mut read[recv_ctr..])
@@ -51,6 +59,12 @@ fn main() {
                 if cur_ctr != cur_len {
                     panic!("mismatched received test cases!");
                 }
+                if cur_len != 0 {
+                    outputs.push(Output {
+                        name: core::mem::take(&mut cur_name),
+                        state: core::mem::take(&mut results),
+                    });
+                }
 
                 cur_ctr = 0;
                 cur_len = u32::from_be_bytes(package.trailing[0..4].try_into().unwrap());
@@ -66,7 +80,6 @@ fn main() {
             // Send test result
             0x01 => {
                 let cnt = (u32::from_be(package.len) - 5) / size_of::<ResultData>() as u32;
-                let mut results = vec![];
                 for i in 0..cnt as usize {
                     let result_data: &ResultData = bytemuck::from_bytes(
                         &package.trailing
@@ -82,13 +95,6 @@ fn main() {
                 cur_ctr += cnt;
                 println!("{cur_name} progress! {cur_ctr}/{cur_len}");
             }
-            // Skip test
-            0x02 => {
-                println!("skipped!");
-                cur_ctr = 0;
-                cur_len = 0;
-                cur_name = "".to_string();
-            }
             // quit command
             0xff => {
                 println!("done!");
@@ -102,4 +108,27 @@ fn main() {
         recv_ctr -= to_drain as usize;
         read.rotate_left(to_drain as usize);
     }
+
+    outputs.push(Output {
+        name: core::mem::take(&mut cur_name),
+        state: core::mem::take(&mut results),
+    });
+
+    let mut output_string = "".to_string();
+    for output in outputs {
+        output_string += &output.name;
+        output_string += ";";
+        for state in output.state {
+            for gpr in state.gpr {
+                output_string += &gpr.to_string();
+                output_string += ":"
+            }
+            output_string.pop();
+            output_string.push(';');
+        }
+        output_string += "\n";
+    }
+
+    println!("outputting to file '{output_file}'");
+    std::fs::write(output_file, output_string).expect("failed to write to output file");
 }
