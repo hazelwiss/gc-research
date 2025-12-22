@@ -2,7 +2,7 @@
 .clangd
 
 # Ignore generated files
-*/.gen
+**/.gen
 
 # Ingore build artifacts.
 *.dol

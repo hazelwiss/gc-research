@@ -202,9 +202,9 @@ fn main() {
         panic!("Cannot fit all tests on disk");
     }
 
-    std::fs::write(out_dir.join("build-gc.mk"), {
+    std::fs::write(out_dir.join("build-gc"), {
         let mut contents = "".to_string();
-        contents += "build: dsp-test-all";
+        contents += "build: dsp-test-all ";
         for test in TESTS {
             contents += &format!("dsp-test-{}.dol ", test.name);
         }
@@ -220,16 +220,15 @@ fn main() {
 
         contents += "dsp-test-all.dol: dsp-test-all.elf\n";
         contents += "dsp-test-all.elf: all.o\n";
-        contents += "clean:\n\t@rm -f *.elf *.dol *.o *.map *.d libdspemit.a\n";
 
         contents
     })
     .expect("failed to create gamecube makefile");
 
-    std::fs::write(out_dir.join("build-wii.mk"), {
-        "
-        build: dsp-fuzzer.dol
-
+    std::fs::write(out_dir.join("build-wii"), {
+        "\
+        build: dsp-fuzzer.dol\n\
+        \
         dsp-fuzzer.dol: dsp-fuzzer.elf\n\
         dsp-fuzzer.elf: fuzzer.o\n\
         "
