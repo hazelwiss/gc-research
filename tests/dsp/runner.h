@@ -1,20 +1,22 @@
-// This file exists to generate fuzzing tests on the original console hardware.
-// This program will connect to WIFI and send fuzzing results to a server which
-// will collect the fuzzing results locally the computer it runs on.
-//
-// This file itself does not contain any actual tests.
-
-#include "fuzzer.h"
+#pragma once
 #include "tasks.h"
 
-#include <assert.h>
-#include <ogc/console.h>
-#include <ogc/dsp.h>
-#include <ogc/system.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <assert.h>
 #include <string.h>
 #include <time.h>
+#include <ogc/dsp.h>
+#include <ogc/system.h>
+
+struct __attribute__((packed)) state {
+  uint16_t gpr[32];
+};
+
+typedef void(*callback_case_done_t)(size_t, struct state*);
+typedef void(*callback_new_test_t)(size_t, const char*, uint32_t);
+typedef void(*callback_print_init_t)(uint32_t total_tasks);
+typedef void(*callback_print_update_t)(struct task*, uint64_t difftime, uint32_t total_tasks, uint32_t task_id, uint32_t total_cases, uint32_t case_id);
 
 #define MAX_PER_BATCH 5
 

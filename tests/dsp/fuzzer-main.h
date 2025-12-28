@@ -1,7 +1,9 @@
-#include "fuzzer.h"
+#pragma once
+
+#include "runner.h"
 
 #include <network.h>
-#include <ogc/console.h>
+#include <ogc/consol.h>
 #include <ogc/dsp.h>
 #include <ogc/system.h>
 #include <ogc/video.h>
@@ -85,7 +87,7 @@ static void cbk_print_update(struct task *task, uint64_t difftime,
                              uint32_t total_tasks, uint32_t task_id,
                              uint32_t total_cases, uint32_t case_id) {
   printf("\x1b[%d;0H", 2);
-  printf("seconds lapsed %lu\n", difftime);
+  printf("seconds lapsed %llu\n", difftime);
   printf("complete: %d / %u\n", task_id, total_tasks);
   printf("processing %s %d / %u...\n", task->name, case_id, total_cases);
 }
@@ -112,7 +114,7 @@ int main() {
 
   // Network initialization.
   struct in_addr local_ip, netmask, gateway;
-  if (err = if_configex(&local_ip, &netmask, &gateway, true, 10), err) {
+  if (err = if_configex(&local_ip, &netmask, &gateway, true), err) {
     printf("Failed to run if_config, err %d\n", err);
     while (1)
       ;
@@ -157,6 +159,9 @@ int main() {
     while (1)
       ;
   }
+
+  // Clear terminal
+  printf("\e[1;1H\e[2J");
 
   // We begin fuzzing.
   char *client_addr_print = inet_ntoa(addr.sin_addr);

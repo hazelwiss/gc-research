@@ -44,7 +44,7 @@ static void configure_light(Mtx view) {
   guVector ldir = {-1.0, 0.0, 0.0};
   guVecMultiply(rot_z, &ldir, &ldir);
   guVecMultiply(rot_y, &ldir, &ldir);
-  guVecNormalize(&ldir);
+  guVecNormalize(&ldir, &ldir);
   guVecScale(&ldir, &ldir, 1000);
   guVecMultiply(view, &ldir, &ldir);
 

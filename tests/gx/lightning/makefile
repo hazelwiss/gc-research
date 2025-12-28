@@ -13,6 +13,3 @@ light-specular.elf: light-specular.o models.o
 
 light-ambient.dol: light-ambient.elf
 light-ambient.elf: light-ambient.o models.o
-
-clean:
-	@rm -f *.elf *.dol *.o *.map *.d

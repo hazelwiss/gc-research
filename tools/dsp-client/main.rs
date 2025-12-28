@@ -1,7 +1,8 @@
 #![feature(ptr_metadata)]
 #![feature(string_from_utf8_lossy_owned)]
+#![feature(addr_parse_ascii)]
 
-use std::{io::Read, net::TcpStream};
+use std::{io::Read, net::TcpStream, time::Duration};
 
 #[repr(C, packed)]
 struct Package {
@@ -25,7 +26,14 @@ fn main() {
     let adr = std::env::args().nth(1).expect("expected address argument");
     let output_file = std::env::args().nth(2).expect("need output file argument");
 
-    let mut receiver = TcpStream::connect(adr).expect("failed to establish socket");
+    let mut receiver = TcpStream::connect_timeout(
+        &std::net::SocketAddr::parse_ascii(adr.as_bytes()).expect("invalid ip address"),
+        Duration::from_secs(5),
+    )
+    .expect("failed to establish socket");
+    receiver
+        .set_read_timeout(Some(Duration::from_secs(3)))
+        .expect("failed to set timeout");
 
     let mut read = vec![0; u16::MAX as usize];
     let mut recv_ctr = 0;

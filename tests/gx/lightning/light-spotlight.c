@@ -112,7 +112,7 @@ static void configure_lights(Mtx view) {
 
     guVector vec = {light->x, light->y, 0.0};
     guVecMultiply(rot, &vec, &vec);
-    guVecNormalize(&vec);
+    guVecNormalize(&vec, &vec);
     vec.x *= quad_scale / 3;
     vec.y *= quad_scale / 3;
     vec.z = light_offs_z;

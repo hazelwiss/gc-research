@@ -149,7 +149,7 @@ fn main() {
         }
 
         let file_bin_path = out_dir.join(format!("{}.bin", cur.name));
-        let file_c_path = out_dir.join(format!("{}.c", cur.name));
+        let file_c_path = out_dir.join(format!("dsp-test-{}.c", cur.name));
         println!(
             "creating '{}', '{}'",
             file_bin_path.display(),
@@ -202,9 +202,52 @@ fn main() {
         panic!("Cannot fit all tests on disk");
     }
 
+    let files = format!(
+        "\
+        char* files[] = {{\n{files}\n}};\n\
+        int file_cnt = {cnt};\n\
+        ",
+        files = TESTS
+            .iter()
+            .map(|t| format!("    \"dvd:/{}.bin\"", t.name))
+            .intersperse(",\n".to_string())
+            .collect::<String>(),
+        cnt = TESTS.len(),
+    );
+
+    std::fs::write(
+        out_dir.join("dsp-test-all.c"),
+        format!(
+            "\
+            {files}\n\
+            #include \"../all-tasks.h\"\n\
+            #include \"../test-main.h\"\n\
+            "
+        ),
+    )
+    .expect("failed to output dsp-test-all.c");
+    std::fs::write(
+        out_dir.join("dsp-fuzzer.c"),
+        format!(
+            "\
+            {files}\n\
+            #include \"../all-tasks.h\"\n\
+            #include \"../fuzzer-main.h\"\n\
+            "
+        ),
+    )
+    .expect("failed to output dsp-fuzzer.c");
+
+    let mut binary_rules = "".to_string();
+    for test in TESTS {
+        binary_rules += test.name;
+        binary_rules += ".bin ";
+    }
+
     std::fs::write(out_dir.join("build-gc"), {
         let mut contents = "".to_string();
-        contents += "build: dsp-test-all ";
+        contents += "include ../../../common/build.mk\n";
+        contents += "build: dsp-test-all.iso ";
         for test in TESTS {
             contents += &format!("dsp-test-{}.dol ", test.name);
         }
@@ -215,23 +258,29 @@ fn main() {
                 "dsp-test-{name}.dol: dsp-test-{name}.elf\n",
                 name = test.name
             );
-            contents += &format!("dsp-test-{name}.elf: {name}.o\n", name = test.name);
+            contents += &format!("dsp-test-{name}.elf: dsp-test-{name}.o\n", name = test.name);
         }
 
+        contents += &format!("dsp-test-all.iso: dsp-test-all.dol {binary_rules}\n");
         contents += "dsp-test-all.dol: dsp-test-all.elf\n";
-        contents += "dsp-test-all.elf: all.o\n";
+        contents += "dsp-test-all.elf: dsp-test-all.o\n";
 
         contents
     })
     .expect("failed to create gamecube makefile");
 
-    std::fs::write(out_dir.join("build-wii"), {
-        "\
-        build: dsp-fuzzer.dol\n\
-        \
-        dsp-fuzzer.dol: dsp-fuzzer.elf\n\
-        dsp-fuzzer.elf: fuzzer.o\n\
-        "
-    })
+    std::fs::write(
+        out_dir.join("build-wii"),
+        format!(
+            "\
+            include ../../../common/build-wii.mk\n\
+            build: dsp-fuzzer.iso\n\
+            \
+            dsp-fuzzer.iso: dsp-fuzzer.dol {binary_rules}\n\
+            dsp-fuzzer.dol: dsp-fuzzer.elf\n\
+            dsp-fuzzer.elf: dsp-fuzzer.o\n\
+            "
+        ),
+    )
     .expect("failed to create gamecube makefile");
 }

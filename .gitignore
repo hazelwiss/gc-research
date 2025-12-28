@@ -9,4 +9,5 @@
 *.o
 *.d
 *.elf
-*.elf.map
+*.map
+*.iso
