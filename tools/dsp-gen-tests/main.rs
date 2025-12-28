@@ -264,6 +264,15 @@ fn main() {
         contents += &format!("dsp-test-all.iso: dsp-test-all.dol {binary_rules}\n");
         contents += "dsp-test-all.dol: dsp-test-all.elf\n";
         contents += "dsp-test-all.elf: dsp-test-all.o\n";
+        contents += "package: build\n";
+        contents += "\t@mkdir -p $(PACKAGE_DIR)/dsp\n";
+        for test in TESTS {
+            contents += &format!(
+                "\t@cp dsp-test-{name}.dol $(PACKAGE_DIR)/dsp/dsp-test-{name}.dol\n",
+                name = test.name
+            );
+        }
+        contents += "\t@cp dsp-test-all.dol $(PACKAGE_DIR)/dsp/dsp-test-all.dol\n";
 
         contents
     })

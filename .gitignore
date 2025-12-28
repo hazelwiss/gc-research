@@ -1,4 +1,6 @@
 /tools/target
+/.pkg
+/packaged.tar.gz
 .clangd
 
 # Ignore generated files
