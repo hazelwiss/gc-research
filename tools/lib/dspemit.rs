@@ -160,6 +160,14 @@ impl Emitter {
         self.inner.push(lo);
     }
 
+    pub fn emit(&mut self, v: u16) {
+        self.e16(v);
+    }
+
+    pub fn mrr(&mut self, d: impl Reg, s: impl Reg) {
+        self.e16(0b0001_1100_0000_0000 | ((d.index() as u16) << 5) | s.index() as u16)
+    }
+
     pub fn lri(&mut self, d: impl Reg, i: u16) {
         self.e32(((0b0000_0000_1000_0000 | d.index() as u32) << 16) | i as u32)
     }
@@ -181,11 +189,24 @@ impl Emitter {
     }
 
     pub fn jcc(&mut self, c: Cond, a: u16) {
-        self.e32(((0b0000_0000_1100_0000 | (c as u32 & 0x0f)) << 16) | a as u32)
+        self.e32(((0b0000_0010_1001_0000 | c as u32) << 16) | a as u32)
+    }
+
+    pub fn callcc(&mut self, c: Cond, a: u16) {
+        self.e32(((0b0000_0010_1011_0000 | c as u32) << 16) | a as u32)
+    }
+
+    pub fn ret(&mut self, c: Cond) {
+        self.e16(0b0000_0010_1101_0000 | c as u16)
     }
 
     pub fn nop(&mut self) {
         self.e16(0);
+    }
+
+    /// Used as a market or 'null' character for end of stream.
+    pub fn emit_invalid_mark(&mut self) {
+        self.e16(0b0000_0000_1010_0000);
     }
 }
 

@@ -1,6 +1,6 @@
 build:
-	@$(MAKE) -C .gen -f build-gc
-	@$(MAKE) -C .gen -f build-wii
+	@$(MAKE) -C apps -f build-gc
+	@$(MAKE) -C apps -f build-wii
 
 package: build
-	@$(MAKE) -C .gen -f build-gc package
+	@$(MAKE) -C apps -f build-gc package

@@ -8,6 +8,7 @@ build:
 .PHONY: setup
 setup:
 	@(cd tools && cargo run --bin dsp-gen-tests)
+	@(cd tools && cargo run --bin dsp-gen-inputs)
 
 .PHONY: package
 package:

@@ -4,10 +4,9 @@ Various tests, benchmarks and research is made using [libogc2](https://github.co
 
 # Building
 
-In order to build this properly, run the following commands
-```
-make setup
-make package
-```
-
+In order to build this properly, run the following command `make package`
 This will generate a `package.tar.gz` that will include every test.
+
+## Building for wii
+
+In order to build for Wii, simply run `Wii= make package` instead of `make package`

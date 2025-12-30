@@ -19,6 +19,10 @@ name = "dsp-gen-tests"
 path = "dsp-gen-tests/main.rs"
 
 [[bin]]
+name = "dsp-gen-inputs"
+path = "dsp-gen-inputs/main.rs"
+
+[[bin]]
 name = "iso"
 path = "iso/main.rs"
 

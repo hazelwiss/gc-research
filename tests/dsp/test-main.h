@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runner.h"
+#include "tasks.h"
 
 #include <stdio.h>
 #include <ogc/disc_io.h>
@@ -22,7 +23,7 @@ static void cbk_print_init(uint32_t total_tasks) {
   printf("Total tasks: %u\n", total_tasks);
 }
 
-static void cbk_print_update(struct task *task, uint64_t difftime,
+static void cbk_print_update(struct taskheader *task, uint64_t difftime,
                              uint32_t total_tasks, uint32_t task_id,
                              uint32_t total_cases, uint32_t case_id) {
   printf("\x1b[%d;0H", 2);
@@ -49,6 +50,7 @@ int main() {
   console_init(xfb, 20, 20, rmode->fbWidth, rmode->xfbHeight,
                rmode->fbWidth * 2);
 
+#ifdef HAS_DISK
   DVD_Init();
   printf("Mounting disk, this can take a while\n");
   if (!ISO9660_Mount("dvd", &__io_gcdvd)) {
@@ -56,6 +58,10 @@ int main() {
     while(1);
   }
   printf("Mounted disk\n");
+#endif
 
   run(cbk, cbk_new_test, cbk_print_init, cbk_print_update);
+
+  printf("Finshed all tests\n");
+  while(1);
 }

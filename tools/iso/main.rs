@@ -48,12 +48,14 @@ fn main() -> anyhow::Result<()> {
         .arg(exec_name)
         .arg("-o")
         .arg(cli.out)
-        .arg(disk_dir)
+        .arg(&disk_dir)
         .status()?
         .success()
     {
         anyhow::bail!("failed to run mkisofs")
     }
+
+    std::fs::remove_dir_all(disk_dir)?;
 
     Ok(())
 }

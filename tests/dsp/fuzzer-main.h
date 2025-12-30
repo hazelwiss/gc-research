@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runner.h"
+#include "tasks.h"
 
 #include <network.h>
 #include <ogc/consol.h>
@@ -83,7 +84,7 @@ static void cbk_print_init(uint32_t total_tasks) {
   printf("Total tasks: %u\n", total_tasks);
 }
 
-static void cbk_print_update(struct task *task, uint64_t difftime,
+static void cbk_print_update(struct taskheader *task, uint64_t difftime,
                              uint32_t total_tasks, uint32_t task_id,
                              uint32_t total_cases, uint32_t case_id) {
   printf("\x1b[%d;0H", 2);

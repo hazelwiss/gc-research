@@ -1,0 +1,5 @@
+include ../../../common/build-wii.mk
+build: dsp-fuzzer.iso
+dsp-fuzzer.iso: dsp-fuzzer.dol nop.bin 
+dsp-fuzzer.dol: dsp-fuzzer.elf
+dsp-fuzzer.elf: dsp-fuzzer.o
