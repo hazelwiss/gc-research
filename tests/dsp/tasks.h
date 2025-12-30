@@ -2,15 +2,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-struct __attribute__((packed, aligned(2))) taskheader {
-  uint16_t task_cnt;
+struct __attribute__((packed, aligned(2))) testheader {
+  uint16_t cases;
   /// if non-zero, then is custom.
   uint16_t is_custom;
   char name[32];
 };
 
-struct task {
-    struct taskheader* header;
+struct test {
+    struct testheader* header;
     /// Used by the implementation
     uint8_t* impl_data;
     /// Used by the implementation
@@ -18,7 +18,7 @@ struct task {
 };
 
 /// Fetch the next task. Returns `true` if there are more tasks, else `false`.
-bool tasks_advance(struct task*);
+bool tasks_advance(struct test*);
 uint64_t tasks_len(void);
 
 /// Advances a single task to point to the next task body.
@@ -28,4 +28,4 @@ uint64_t tasks_len(void);
 // include the prologue and epilogue.
 //
 // When this returns `NULL` then there are no more tasks to complete here.
-uint8_t* task_advance(struct task* task, uint32_t* size);
+uint8_t* task_advance(struct test* task, uint32_t* size);

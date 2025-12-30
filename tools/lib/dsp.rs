@@ -1,4 +1,4 @@
-use crate::dspemit::{self, Cond, Emitter, Reg, regs};
+use crate::dspemit::{Cond, Emitter, regs};
 
 pub const GEN_DSP_INPUTS: usize = 35000;
 
@@ -47,17 +47,6 @@ pub fn block_end(e: &mut Emitter) {
 pub fn test_prologue(e: &mut Emitter, input: Option<InputState>) {
     let input = input.unwrap_or(InputState::random());
     for (i, &input) in input.regs.iter().enumerate() {
-        if [
-            regs::St0.index() as u16,
-            regs::St1.index() as u16,
-            regs::St2.index() as u16,
-            regs::St3.index() as u16,
-        ]
-        .contains(&(i as u16))
-        {
-            continue;
-        }
-
         e.lri(i as u8, input);
     }
 }

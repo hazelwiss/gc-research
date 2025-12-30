@@ -14,22 +14,25 @@
 static GXRModeObj *rmode;
 static void *xfb = NULL;
 
-static void cbk(size_t id, struct state *result) {}
+static struct metastate_init* init_meta;
+static struct metastate_test* test_meta;
 
-static void cbk_new_test(size_t id, const char *name, uint32_t cnt) {}
+static void cbk_init (struct metastate_init* meta) {
+  init_meta = meta;
 
-static void cbk_print_init(uint32_t total_tasks) {
   printf("\e[1;1H\e[2J");
-  printf("Total tasks: %u\n", total_tasks);
+  printf("Total tasks: %u\n", meta->total_tasks);  
 }
 
-static void cbk_print_update(struct taskheader *task, uint64_t difftime,
-                             uint32_t total_tasks, uint32_t task_id,
-                             uint32_t total_cases, uint32_t case_id) {
+static void cbk_test (struct metastate_test* meta) {
+  test_meta = meta;
+}
+
+static void cbk_case (struct metastate_case* meta) {
   printf("\x1b[%d;0H", 2);
-  printf("seconds lapsed %llu\n", difftime);
-  printf("complete: %d / %u\n", task_id, total_tasks);
-  printf("processing %s %d / %u...\n", task->name, case_id, total_cases);
+  printf("seconds lapsed %llu\n", meta->uptime);
+  printf("complete: %d / %u\n", test_meta->test_id, init_meta->total_tasks);
+  printf("processing %s %d / %u...\n", test_meta->name, meta->case_id, test_meta->total_cases);  
 }
 
 int main() {
@@ -49,6 +52,7 @@ int main() {
 
   console_init(xfb, 20, 20, rmode->fbWidth, rmode->xfbHeight,
                rmode->fbWidth * 2);
+  printf("Starting...\n");
 
 #ifdef HAS_DISK
   DVD_Init();
@@ -60,7 +64,7 @@ int main() {
   printf("Mounted disk\n");
 #endif
 
-  run(cbk, cbk_new_test, cbk_print_init, cbk_print_update);
+  run(cbk_init, cbk_test, cbk_case);
 
   printf("Finshed all tests\n");
   while(1);

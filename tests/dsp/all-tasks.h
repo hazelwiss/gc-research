@@ -10,14 +10,14 @@ extern char* files[];
 extern int file_cnt;
 
 static struct {
-  struct taskheader header;
+  struct testheader header;
   FILE* fp;
   uint16_t buf[0x10000];
   uint32_t bufsize;
   uint32_t bufptr;
 } task_state;
 
-bool tasks_advance(struct task* ret) {
+bool tasks_advance(struct test* ret) {
   static uint32_t file_idx = 0;
   static FILE* fp = 0;
 
@@ -30,12 +30,12 @@ bool tasks_advance(struct task* ret) {
     while(1);
   }
 
-  if (fread(&task_state.header, 1, sizeof(struct taskheader), fp)  != sizeof(struct taskheader)) {
+  if (fread(&task_state.header, 1, sizeof(struct testheader), fp)  != sizeof(struct testheader)) {
     printf("failed to read in taskheader\n");
     while(1);
   }
   
-  *ret = (struct task) {
+  *ret = (struct test) {
     .header = &task_state.header,
     .impl_data = 0,
     .impl_ctr = 0,
@@ -52,7 +52,7 @@ uint64_t tasks_len(void) {
   return file_cnt;
 }
 
-uint8_t* task_advance(struct task* task, uint32_t* size) {
+uint8_t* task_advance(struct test* task, uint32_t* size) {
   static uint16_t copy_buf[0x1000];
   for (int i = 0;;) {
     if (i >= (sizeof(copy_buf) / sizeof(*copy_buf))) {

@@ -4,11 +4,11 @@
 
 extern uint8_t task_data[];
 
-bool tasks_advance(struct task* ret) {
+bool tasks_advance(struct test* ret) {
   static bool advance = true;
-  *ret = (struct task) {
-    .header = (struct taskheader*)task_data,
-    .impl_data = &task_data[sizeof(struct taskheader)],
+  *ret = (struct test) {
+    .header = (struct testheader*)task_data,
+    .impl_data = &task_data[sizeof(struct testheader)],
     .impl_ctr = 0,
   };
   bool should_advance = advance;
@@ -25,12 +25,12 @@ uint64_t tasks_len(void) {
 // 
 // If the task is not `custom` in the header then this task will
 // include the prologue and epilogue.
-uint8_t* task_advance(struct task* task, uint32_t* size) {
+uint8_t* task_advance(struct test* task, uint32_t* size) {
   static uint16_t buf[0x1000];
   static uint32_t tasks;
   *size = 0;
 
-  if (tasks >= task->header->task_cnt) {
+  if (tasks >= task->header->cases) {
     return NULL;
   }
 

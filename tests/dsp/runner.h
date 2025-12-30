@@ -11,61 +11,87 @@
 #include <ogc/dsp.h>
 #include <ogc/system.h>
 
+/// The state of the DSP on the CPU.
 struct __attribute__((packed)) state {
   uint16_t gpr[32];
 };
 
-typedef void(*callback_case_done_t)(size_t, struct state*);
-typedef void(*callback_new_test_t)(size_t, const char*, uint32_t);
-typedef void(*callback_print_init_t)(uint32_t total_tasks);
-typedef void(*callback_print_update_t)(struct taskheader*, uint64_t difftime, uint32_t total_tasks, uint32_t task_id, uint32_t total_cases, uint32_t case_id);
+/// Runner initialization meta data
+struct metastate_init {
+  /// The total amount of tasks to do.
+  uint32_t total_tasks;
+};
 
-#define MAX_PER_BATCH 5
+/// Runner test meta data
+struct metastate_test {
+  /// The name of the task.
+  const char* name;
+  /// The total amount of cases in this test.
+  uint32_t total_cases;
+  /// The ID of the test.
+  uint32_t test_id;
+};
 
-// untested instructions: Halt, RTIcc
+/// Runner case meta data.
+struct metastate_case {
+  /// The current amount of time the test has been running for.
+  /// May not be exact.
+  uint64_t uptime;
+  /// The ID of the current task.
+  uint32_t case_id;
+  /// The result of the test-case.
+  struct state result;
+};
 
-void run(callback_case_done_t cbk, callback_new_test_t cbk_new_test,
-         callback_print_init_t print_init,
-         callback_print_update_t print_update) {
+typedef void(*callback_init_t)(struct metastate_init*);
+typedef void(*callback_test_t)(struct metastate_test*);
+typedef void(*callback_case_t)(struct metastate_case*);
+
+void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_case) {
   static uint8_t __attribute__((aligned(32))) buf[0x2000];
 
   time_t tc, start = time(NULL);
-
   uint32_t total_tasks = tasks_len();
 
-  print_init(total_tasks);
+  struct metastate_init meta_init;
+  meta_init.total_tasks = total_tasks;
+  cb_init(&meta_init);
 
-  struct task task;
-  int task_idx = -1;
-  while (++task_idx, tasks_advance(&task)) {
-    cbk_new_test(task_idx, task.header->name, task.header->task_cnt);
+  struct test test;
+  int test_id = -1;
+  while (++test_id, tasks_advance(&test)) {
+    struct metastate_test meta_test;
+    meta_test.name = test.header->name;
+    meta_test.total_cases = test.header->cases;
+    meta_test.test_id = test_id;
+    cb_test(&meta_test);
 
-    int case_idx = 0;
+    int case_id = 0;
     uint32_t len = 0;
     uint32_t bufptr = 0;
-    uint8_t* ptr = task_advance(&task, &len);
+    uint8_t* ptr = task_advance(&test, &len);
     do {
       memcpy(&buf[bufptr], block_start, sizeof(block_start));
       bufptr += sizeof(block_start);
 
       uint32_t cases = 0;
       while (ptr) {
-        if (case_idx >= sizeof(test_prologue) / sizeof(*test_prologue)) {
+        if (case_id >= sizeof(test_prologue) / sizeof(*test_prologue)) {
           printf("Overflow bug for prologue\n");
           while(1);
         }
-        uint32_t prologue_len = !task.header->is_custom ? sizeof(test_prologue[case_idx]) : 0;
-        uint32_t epilogue_len = !task.header->is_custom ? sizeof(test_epilogue) : 0;
+        uint32_t prologue_len = !test.header->is_custom ? sizeof(test_prologue[case_id]) : 0;
+        uint32_t epilogue_len = !test.header->is_custom ? sizeof(test_epilogue) : 0;
         if (bufptr + len + prologue_len + epilogue_len  < sizeof(buf) - sizeof(block_end)) {
-          memcpy(&buf[bufptr], test_prologue[case_idx], prologue_len);
+          memcpy(&buf[bufptr], test_prologue[case_id], prologue_len);
           bufptr += prologue_len;
           memcpy(&buf[bufptr], ptr, len);
           bufptr += len;
           memcpy(&buf[bufptr], test_epilogue, epilogue_len);    
           bufptr += epilogue_len;
           cases += 1;
-          case_idx += 1;
-          ptr = task_advance(&task, &len);
+          case_id += 1;
+          ptr = task_advance(&test, &len);
         } else {
           break;
         }
@@ -90,25 +116,24 @@ void run(callback_case_done_t cbk, callback_new_test_t cbk_new_test,
       dsp_task.done_cb = NULL;
       DSP_AddTask(&dsp_task);
 
+      tc = time(NULL);
+
       // Run for all variations of inputs.
-      struct state result;
+      struct metastate_case meta_case;
       for (int c = 0; c < cases; ++c) {
-        memset(&result, 0, sizeof(struct state));
+        meta_case.case_id = case_id;
+        meta_case.uptime = (uint64_t)difftime(tc, start);
 
         for (int r = 0; r < 32; ++r) {
           while(!DSP_CheckMailFrom())
             ;
           uint8_t  mail = DSP_ReadMailFrom();
           mail &= 0xffff;
-          result.gpr[31 - r] = mail;
+          meta_case.result.gpr[31 - r] = mail;
         }
 
-        cbk(task_idx, &result);
+        cb_case(&meta_case);
       }
-
-      tc = time(NULL);
-      print_update(task.header, (uint64_t)difftime(tc, start), total_tasks, task_idx,
-                   task.header->task_cnt, case_idx);    
     } while(ptr);
   }
 }

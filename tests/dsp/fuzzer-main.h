@@ -46,21 +46,24 @@ static void flush(void) {
   net.bufptr = sizeof(struct cmd);
 }
 
-static void cbk(size_t id, struct state *result) {
-  if ((net.bufptr + sizeof(struct state)) > UINT16_MAX) {
-    flush();
-  }
+static struct metastate_init* init_meta;
+static struct metastate_test* test_meta;
 
-  memcpy(&net.buffer[net.bufptr], result, sizeof(struct state));
-  net.bufptr += sizeof(struct state);
+static void cbk_init (struct metastate_init* meta) {
+  init_meta = meta;
+
+  printf("\e[1;1H\e[2J");
+  printf("Total tasks: %u\n", meta->total_tasks);  
 }
 
-static void cbk_new_test(size_t id, const char *name, uint32_t cnt) {
+static void cbk_test (struct metastate_test* meta) {
+  test_meta = meta;
+
   flush();
 
   static uint8_t response[512];
   struct cmd *cmd = (struct cmd *)&response;
-  size_t name_len = strlen(name);
+  size_t name_len = strlen(meta->name);
 
   if (name_len + 4 > sizeof(response)) {
     printf("BUG! task name too long\n");
@@ -70,8 +73,8 @@ static void cbk_new_test(size_t id, const char *name, uint32_t cnt) {
 
   cmd->cmd = 0;
   cmd->len = sizeof(struct cmd) + 4 + name_len + 1;
-  memcpy(cmd->data, &cnt, sizeof(cnt));
-  memcpy(&cmd->data[sizeof(cnt)], name, name_len + 1);
+  memcpy(cmd->data, &meta->total_cases, sizeof(meta->total_cases));
+  memcpy(&cmd->data[sizeof(meta->total_cases)], meta->name, name_len + 1);
 
   if (net_send(net.sk_client, response, cmd->len, 0) == -1) {
     printf("failed to send TCP packet...\n");
@@ -80,17 +83,18 @@ static void cbk_new_test(size_t id, const char *name, uint32_t cnt) {
   }
 }
 
-static void cbk_print_init(uint32_t total_tasks) {
-  printf("Total tasks: %u\n", total_tasks);
-}
-
-static void cbk_print_update(struct taskheader *task, uint64_t difftime,
-                             uint32_t total_tasks, uint32_t task_id,
-                             uint32_t total_cases, uint32_t case_id) {
+static void cbk_case (struct metastate_case* meta) {
   printf("\x1b[%d;0H", 2);
-  printf("seconds lapsed %llu\n", difftime);
-  printf("complete: %d / %u\n", task_id, total_tasks);
-  printf("processing %s %d / %u...\n", task->name, case_id, total_cases);
+  printf("seconds lapsed %llu\n", meta->uptime);
+  printf("complete: %d / %u\n", test_meta->test_id, init_meta->total_tasks);
+  printf("processing %s %d / %u...\n", test_meta->name, meta->case_id, test_meta->total_cases);  
+
+  if ((net.bufptr + sizeof(struct state)) > UINT16_MAX) {
+    flush();
+  }
+
+  memcpy(&net.buffer[net.bufptr], &meta->result, sizeof(struct state));
+  net.bufptr += sizeof(struct state);
 }
 
 int main() {
@@ -169,7 +173,7 @@ int main() {
   printf("DSP fuzzer; client %s\n", client_addr_print);
   VIDEO_WaitVSync();
 
-  run(cbk, cbk_new_test, cbk_print_init, cbk_print_update);
+  run(cbk_init, cbk_test, cbk_case);
 
   uint8_t final_cmd_buf[sizeof(struct cmd)];
   struct cmd *final_cmd = (struct cmd *)&final_cmd_buf;
