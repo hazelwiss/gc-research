@@ -58,6 +58,7 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
   cb_init(&meta_init);
 
   struct test test;
+  memset(&test, 0, sizeof(test));
   int test_id = -1;
   while (++test_id, tasks_advance(&test)) {
     struct metastate_test meta_test;

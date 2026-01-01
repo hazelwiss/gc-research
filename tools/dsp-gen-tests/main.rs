@@ -141,7 +141,6 @@ fn main() -> anyhow::Result<()> {
         format!(
             "\
             {files}\n\
-            #include \"../all-tasks.h\"\n\
             #include \"../fuzzer-main.h\"\n\
             "
         ),
@@ -188,16 +187,13 @@ fn main() -> anyhow::Result<()> {
 
     std::fs::write(
         out_dir.join("build-wii"),
-        format!(
-            "\
-            include ../../../common/build-wii.mk\n\
-            build: dsp-fuzzer.iso\n\
-            \
-            dsp-fuzzer.iso: dsp-fuzzer.dol {binary_rules}\n\
-            dsp-fuzzer.dol: dsp-fuzzer.elf\n\
-            dsp-fuzzer.elf: dsp-fuzzer.o\n\
-            "
-        ),
+        "\
+        include ../../../common/build-wii.mk\n\
+        build: dsp-fuzzer.dol\n\
+        \n\
+        dsp-fuzzer.dol: dsp-fuzzer.elf\n\
+        dsp-fuzzer.elf: dsp-fuzzer.o\n\
+        ",
     )?;
 
     Ok(())

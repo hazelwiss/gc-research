@@ -2,7 +2,12 @@
 #![feature(string_from_utf8_lossy_owned)]
 #![feature(addr_parse_ascii)]
 
-use std::{io::Read, net::TcpStream, time::Duration};
+use std::{
+    io::{Read, Write},
+    net::TcpStream,
+    path::PathBuf,
+    time::Duration,
+};
 
 #[repr(C, packed)]
 struct Package {
@@ -22,18 +27,37 @@ struct Output {
     state: Vec<ResultData>,
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let adr = std::env::args().nth(1).expect("expected address argument");
-    let output_file = std::env::args().nth(2).expect("need output file argument");
+    let output_dir = PathBuf::from(
+        std::env::args()
+            .nth(2)
+            .unwrap_or("../tests/dsp/results".to_string()),
+    );
+    let input_bin_dir = std::env::args()
+        .nth(3)
+        .unwrap_or("../tests/dsp/apps".to_string());
 
-    let mut receiver = TcpStream::connect_timeout(
+    let mut bins = vec![];
+    for file in std::fs::read_dir(input_bin_dir)? {
+        let file = file?;
+        if !file.file_type()?.is_file() {
+            continue;
+        }
+        if file.path().extension().and_then(|s| s.to_str()) == Some("bin") {
+            println!("{}", file.path().display());
+            bins.push(std::fs::read(file.path())?);
+        }
+    }
+
+    let bins_len = u32::try_from(bins.len()).unwrap();
+    let mut bins = bins.into_iter();
+
+    let mut socket = TcpStream::connect_timeout(
         &std::net::SocketAddr::parse_ascii(adr.as_bytes()).expect("invalid ip address"),
         Duration::from_secs(5),
-    )
-    .expect("failed to establish socket");
-    receiver
-        .set_read_timeout(Some(Duration::from_secs(3)))
-        .expect("failed to set timeout");
+    )?;
+    socket.set_read_timeout(Some(Duration::from_secs(3)))?;
 
     let mut read = vec![0; u16::MAX as usize];
     let mut recv_ctr = 0;
@@ -43,9 +67,7 @@ fn main() {
     let mut outputs = vec![];
     let mut results = vec![];
     loop {
-        recv_ctr += receiver
-            .read(&mut read[recv_ctr..])
-            .expect("failed to read");
+        recv_ctr += socket.read(&mut read[recv_ctr..]).expect("failed to read");
 
         if recv_ctr < 5 {
             continue;
@@ -83,6 +105,7 @@ fn main() {
                         .cloned()
                         .collect(),
                 );
+
                 println!("new fuzzing test! '{cur_name}', cases: {cur_len}");
             }
             // Send test result
@@ -103,6 +126,20 @@ fn main() {
                 cur_ctr += cnt;
                 println!("{cur_name} progress! {cur_ctr}/{cur_len}");
             }
+            // request the next task
+            0x80 => {
+                if let Some(bin) = bins.next() {
+                    socket.write_all(&u32::try_from(bin.len()).unwrap().to_be_bytes())?;
+                    socket.write_all(&bin)?;
+                } else {
+                    // If no task left, signal that by returning a size of 0.
+                    socket.write_all(&0u32.to_be_bytes())?;
+                }
+            }
+            // request total amount of tasks
+            0x90 => {
+                socket.write_all(&bins_len.to_be_bytes())?;
+            }
             // quit command
             0xff => {
                 println!("done!");
@@ -122,8 +159,11 @@ fn main() {
         state: core::mem::take(&mut results),
     });
 
-    let mut output_string = "".to_string();
+    std::fs::remove_dir_all(&output_dir)?;
+    std::fs::create_dir(&output_dir)?;
+
     for output in outputs {
+        let mut output_string = "".to_string();
         output_string += &output.name;
         output_string += ";";
         for state in output.state {
@@ -134,9 +174,11 @@ fn main() {
             output_string.pop();
             output_string.push(';');
         }
-        output_string += "\n";
+
+        let output_file = output_dir.join(output.name);
+        println!("outputting to file '{}'", output_file.display());
+        std::fs::write(output_file, output_string)?;
     }
 
-    println!("outputting to file '{output_file}'");
-    std::fs::write(output_file, output_string).expect("failed to write to output file");
+    Ok(())
 }

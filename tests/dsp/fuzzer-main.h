@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
+
 static GXRModeObj *rmode;
 static void *xfb = NULL;
 
@@ -25,9 +27,101 @@ struct __attribute__((packed)) cmd {
 static struct {
   s32 sk_listen;
   s32 sk_client;
-  uint8_t buffer[UINT16_MAX];
+  uint8_t buffer[INT16_MAX];
   size_t bufptr;
 } net = {.bufptr = sizeof(struct cmd)};
+
+bool tasks_advance(struct test* ret) {
+  // Reserve 20MiB for various task data.
+  static uint8_t task_data[2 << 20];
+  
+  // Request the next task.
+  struct cmd cmd;
+  cmd.len = sizeof(struct cmd);
+  cmd.cmd = 0x80;
+
+  if (net_send(net.sk_client, &cmd, sizeof(struct cmd), 0) != sizeof(struct cmd)) {
+    printf("Failed to send task advance command\n");
+    while (1)
+      ;
+  }
+
+  uint32_t response_length = 0;
+  for (int i = 4; i > 0 ; i -= net_read(net.sk_client, ((uint8_t*)&response_length) + (4 - i), i));
+  if (response_length > sizeof(task_data)) {
+    printf("Not enough data reserved for tasks in fuzzer\n");
+    while(1);
+  }
+
+  if (response_length == 0) {
+    return false;
+  }
+
+  if (response_length < sizeof(struct testheader)) {
+    printf("data not sufficient to fit test header\n");
+    while(1);
+  }
+
+  int i = response_length;
+  int s = 0;
+  do {
+    s = net_read(net.sk_client, task_data + (response_length - i), MIN(i, INT16_MAX));
+    i -= s;
+    if (s < 0) {
+      printf("failed to read data, error code: %d\n", s);
+      while(1);
+    }
+  } while(i > 0);
+
+  *ret = (struct test) {
+    .header = (struct testheader*)task_data,
+    .impl_data = &task_data[sizeof(struct testheader)],
+    .impl_ctr = 0,
+  };
+
+  return true;
+}
+
+uint64_t tasks_len(void) {
+  // Request the total amount of tasks
+  struct cmd cmd;
+  cmd.len = sizeof(struct cmd);
+  cmd.cmd = 0x90;
+
+  if (net_send(net.sk_client, &cmd, sizeof(struct cmd), 0) != sizeof(struct cmd)) {
+    printf("Failed to send task len command\n");
+    while (1)
+      ;
+  }
+
+  uint32_t count;
+  for (int i = 4; i > 0 ; i -= net_read(net.sk_client, ((uint8_t*)&count) + (4 - i), i));
+  return count;
+}
+
+uint8_t* task_advance(struct test* task, uint32_t* size) {
+static uint16_t buf[0x1000];
+  static uint32_t tasks;
+  *size = 0;
+
+  if (tasks >= task->header->cases) {
+    return NULL;
+  }
+
+  for(int i = 0; i < sizeof(buf) / sizeof(*buf); ++i) {
+    buf[i] = ((uint16_t*)task->impl_data)[task->impl_ctr++];
+
+    // Stop character
+    if (buf[i] == 0b0000'0000'1010'0000) {
+      tasks += 1;
+      return (uint8_t*)buf;
+    }
+    *size += 2;
+  }
+
+  printf("Error advancing task\n");
+  while(1);
+}
 
 static void flush(void) {
   if (net.bufptr <= sizeof(struct cmd)) {
@@ -38,10 +132,13 @@ static void flush(void) {
   cmd->cmd = 0x01;
   cmd->len = net.bufptr;
 
-  if (net_send(net.sk_client, net.buffer, net.bufptr, 0) == -1) {
-    printf("failed to send TCP packet...\n");
-    while (1)
-      ;
+  for (int i = 0, s = 0; i < net.bufptr; i += s) {
+    s = net_send(net.sk_client, net.buffer, MIN(net.bufptr, INT16_MAX), 0);
+    if (s < 0) {
+      printf("failed to send TCP packet...\n");
+      while (1)
+        ;      
+    }
   }
   net.bufptr = sizeof(struct cmd);
 }
@@ -76,7 +173,7 @@ static void cbk_test (struct metastate_test* meta) {
   memcpy(cmd->data, &meta->total_cases, sizeof(meta->total_cases));
   memcpy(&cmd->data[sizeof(meta->total_cases)], meta->name, name_len + 1);
 
-  if (net_send(net.sk_client, response, cmd->len, 0) == -1) {
+  if (net_send(net.sk_client, response, cmd->len, 0) != cmd->len) {
     printf("failed to send TCP packet...\n");
     while (1)
       ;
@@ -89,7 +186,7 @@ static void cbk_case (struct metastate_case* meta) {
   printf("complete: %d / %u\n", test_meta->test_id, init_meta->total_tasks);
   printf("processing %s %d / %u...\n", test_meta->name, meta->case_id, test_meta->total_cases);  
 
-  if ((net.bufptr + sizeof(struct state)) > UINT16_MAX) {
+  if ((net.bufptr + sizeof(struct state)) >= sizeof(net.buffer)) {
     flush();
   }
 
@@ -179,7 +276,7 @@ int main() {
   struct cmd *final_cmd = (struct cmd *)&final_cmd_buf;
   final_cmd->cmd = 0xff;
   final_cmd->len = sizeof(struct cmd);
-  if (net_send(net.sk_client, &final_cmd_buf, sizeof(struct cmd), 0) < 0) {
+  if (net_send(net.sk_client, &final_cmd_buf, sizeof(struct cmd), 0) != sizeof(struct cmd)) {
     printf("Failed to send finished command\n");
     while (1)
       ;
