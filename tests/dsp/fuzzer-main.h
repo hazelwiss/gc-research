@@ -99,9 +99,10 @@ uint64_t tasks_len(void) {
   return count;
 }
 
-uint8_t* task_advance(struct test* task, uint32_t* size) {
-static uint16_t buf[0x1000];
+uint8_t* task_advance(struct test* task, uint32_t* size, struct state* expected) {
+  static uint16_t buf[0x1000];
   static uint32_t tasks;
+  memset(expected, 0, sizeof(*expected));
   *size = 0;
 
   if (tasks >= task->header->cases) {
@@ -180,7 +181,7 @@ static void cbk_test (struct metastate_test* meta) {
   }
 }
 
-static void cbk_case (struct metastate_case* meta) {
+static bool cbk_case (struct metastate_case* meta) {
   printf("\x1b[%d;0H", 2);
   printf("seconds lapsed %llu\n", meta->uptime);
   printf("complete: %d / %u\n", test_meta->test_id, init_meta->total_tasks);
@@ -192,6 +193,8 @@ static void cbk_case (struct metastate_case* meta) {
 
   memcpy(&net.buffer[net.bufptr], &meta->result, sizeof(struct state));
   net.bufptr += sizeof(struct state);
+
+  return true;
 }
 
 int main() {
@@ -271,6 +274,7 @@ int main() {
   VIDEO_WaitVSync();
 
   run(cbk_init, cbk_test, cbk_case);
+  flush();
 
   uint8_t final_cmd_buf[sizeof(struct cmd)];
   struct cmd *final_cmd = (struct cmd *)&final_cmd_buf;

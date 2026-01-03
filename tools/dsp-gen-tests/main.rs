@@ -47,8 +47,15 @@ fn main() -> anyhow::Result<()> {
     }
     std::fs::create_dir(&out_dir).expect("failed to create output directory");
 
+    let result_dir = PathBuf::from("../tests/dsp/results");
+
+    let mut binary_rules = "".to_string();
+    let mut results_files = vec![];
     let mut total_bytes_of_tests = 0;
     for cur in TESTS {
+        binary_rules += cur.name;
+        binary_rules += ".bin ";
+
         println!("generating {}", cur.name);
         let mut e: Emitter = Emitter::default();
 
@@ -75,7 +82,9 @@ fn main() -> anyhow::Result<()> {
         total_bytes_of_tests += e.len();
 
         let file_bin_name = format!("{}.bin", cur.name);
+        let file_res_name = format!("{}.result.bin", cur.name);
         let file_bin_path = out_dir.join(&file_bin_name);
+        let file_res_path = result_dir.join(&file_res_name);
         let file_c_path = out_dir.join(format!("dsp-test-{}.c", cur.name));
 
         println!(
@@ -93,6 +102,22 @@ fn main() -> anyhow::Result<()> {
                 .as_slice(),
         )?;
 
+        let results_find = if file_res_path.exists() {
+            let result_file = format!("../results/{}.result.bin", cur.name);
+            binary_rules += result_file.as_str();
+            binary_rules += " ";
+
+            results_files.push(Some(result_file));
+
+            format!(
+                "uint8_t result_data_[] = {{\n\t#embed \"../results/{}\"\n}};\nuint8_t *result_data = result_data_;",
+                file_res_name
+            )
+        } else {
+            results_files.push(None);
+
+            "uint8_t *result_data = 0;".to_string()
+        };
         std::fs::write(
             file_c_path,
             format!(
@@ -101,6 +126,7 @@ fn main() -> anyhow::Result<()> {
                 uint8_t task_data[] = {{\n\
                 \t#embed \"{file_bin_name}\"\n\
                 }};\n\
+                {results_find}\n\
                 #include \"../test-main.h\"\n\
                 ",
             ),
@@ -114,11 +140,20 @@ fn main() -> anyhow::Result<()> {
     let files = format!(
         "\
         char* files[] = {{\n{files}\n}};\n\
+        char* result_files[] = {{\n{res}\n}};\n\
         int file_cnt = {cnt};\n\
         ",
         files = TESTS
             .iter()
             .map(|t| format!("    \"dvd:/{}.bin\"", t.name))
+            .intersperse(",\n".to_string())
+            .collect::<String>(),
+        res = results_files
+            .iter()
+            .map(|s| s
+                .as_ref()
+                .map(|s| format!("\t\"dvd:/{}.bin\"", s))
+                .unwrap_or_else(|| "\t0".to_string()))
             .intersperse(",\n".to_string())
             .collect::<String>(),
         cnt = TESTS.len(),
@@ -145,12 +180,6 @@ fn main() -> anyhow::Result<()> {
             "
         ),
     )?;
-
-    let mut binary_rules = "".to_string();
-    for test in TESTS {
-        binary_rules += test.name;
-        binary_rules += ".bin ";
-    }
 
     std::fs::write(out_dir.join("build-gc"), {
         let mut contents = "".to_string();

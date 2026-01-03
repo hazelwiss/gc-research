@@ -1,8 +1,10 @@
 #include "tasks.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 extern uint8_t task_data[];
+extern uint8_t* result_data;
 
 bool tasks_advance(struct test* ret) {
   static bool advance = true;
@@ -25,12 +27,12 @@ uint64_t tasks_len(void) {
 // 
 // If the task is not `custom` in the header then this task will
 // include the prologue and epilogue.
-uint8_t* task_advance(struct test* task, uint32_t* size) {
+uint8_t* task_advance(struct test* task, uint32_t* size, struct state* expected_result) {
   static uint16_t buf[0x1000];
-  static uint32_t tasks;
+  static uint32_t cases;
   *size = 0;
 
-  if (tasks >= task->header->cases) {
+  if (cases >= task->header->cases) {
     return NULL;
   }
 
@@ -38,7 +40,12 @@ uint8_t* task_advance(struct test* task, uint32_t* size) {
     buf[i] = ((uint16_t*)task->impl_data)[task->impl_ctr++];
     // Stop character
     if (buf[i] == 0b0000'0000'1010'0000) {
-      tasks += 1;
+      if(result_data) {
+        memcpy(expected_result, &((struct state*)result_data)[cases], sizeof(struct state));
+      } else {
+        memset(expected_result, 0, sizeof(struct state));
+      }
+      cases += 1;
       return (uint8_t*)buf;
     }
     *size += 2;

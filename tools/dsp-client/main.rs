@@ -16,7 +16,7 @@ struct Package {
     trailing: [u8],
 }
 
-#[derive(bytemuck::Pod, bytemuck::Zeroable, Clone, Copy)]
+#[derive(bytemuck::Pod, bytemuck::Zeroable, Clone, Copy, Debug)]
 #[repr(C, packed)]
 struct ResultData {
     gpr: [u16; 32],
@@ -163,21 +163,16 @@ fn main() -> anyhow::Result<()> {
     std::fs::create_dir(&output_dir)?;
 
     for output in outputs {
-        let mut output_string = "".to_string();
-        output_string += &output.name;
-        output_string += ";";
+        let mut output_bin = vec![];
         for state in output.state {
             for gpr in state.gpr {
-                output_string += &gpr.to_string();
-                output_string += ":"
+                output_bin.extend(gpr.to_be_bytes());
             }
-            output_string.pop();
-            output_string.push(';');
         }
 
-        let output_file = output_dir.join(output.name);
+        let output_file = output_dir.join(format!("{}.result.bin", output.name));
         println!("outputting to file '{}'", output_file.display());
-        std::fs::write(output_file, output_string)?;
+        std::fs::write(output_file, output_bin)?;
     }
 
     Ok(())

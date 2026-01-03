@@ -11,11 +11,6 @@
 #include <ogc/dsp.h>
 #include <ogc/system.h>
 
-/// The state of the DSP on the CPU.
-struct __attribute__((packed)) state {
-  uint16_t gpr[32];
-};
-
 /// Runner initialization meta data
 struct metastate_init {
   /// The total amount of tasks to do.
@@ -41,14 +36,21 @@ struct metastate_case {
   uint32_t case_id;
   /// The result of the test-case.
   struct state result;
+  /// The expected result of the test-case.
+  struct state* expected;
+  /// The data of the test case itself.
+  uint8_t* test_data;
+  /// The test data length in bytes.
+  uint32_t test_data_len;
 };
+
+static uint8_t __attribute__((aligned(32))) buf[0x2000];
 
 typedef void(*callback_init_t)(struct metastate_init*);
 typedef void(*callback_test_t)(struct metastate_test*);
-typedef void(*callback_case_t)(struct metastate_case*);
+typedef bool(*callback_case_t)(struct metastate_case*);
 
 void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_case) {
-  static uint8_t __attribute__((aligned(32))) buf[0x2000];
 
   time_t tc, start = time(NULL);
   uint32_t total_tasks = tasks_len();
@@ -67,32 +69,44 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
     meta_test.test_id = test_id;
     cb_test(&meta_test);
 
-    int case_id = 0;
+    struct { uint32_t len; uint8_t* data; struct state expected; } cases_test_meta[128];
+    uint32_t cases_test_meta_mask = (sizeof(cases_test_meta) / sizeof(*cases_test_meta)) - 1;
+
+    uint32_t case_id = 0;
     uint32_t len = 0;
     uint32_t bufptr = 0;
-    uint8_t* ptr = task_advance(&test, &len);
+    uint8_t* ptr = task_advance(&test, &len, &cases_test_meta[0].expected);
     do {
       memcpy(&buf[bufptr], block_start, sizeof(block_start));
       bufptr += sizeof(block_start);
 
       uint32_t cases = 0;
-      while (ptr) {
+      int start_case_id = case_id;
+      while(ptr) {
         if (case_id >= sizeof(test_prologue) / sizeof(*test_prologue)) {
           printf("Overflow bug for prologue\n");
           while(1);
         }
         uint32_t prologue_len = !test.header->is_custom ? sizeof(test_prologue[case_id]) : 0;
         uint32_t epilogue_len = !test.header->is_custom ? sizeof(test_epilogue) : 0;
-        if (bufptr + len + prologue_len + epilogue_len  < sizeof(buf) - sizeof(block_end)) {
+        if (
+          bufptr + len + prologue_len + epilogue_len < sizeof(buf) - sizeof(block_end)
+          && cases < sizeof(cases_test_meta) / sizeof(*cases_test_meta)
+        ) {
           memcpy(&buf[bufptr], test_prologue[case_id], prologue_len);
           bufptr += prologue_len;
+
+          cases_test_meta[case_id & cases_test_meta_mask].data = &buf[bufptr];
+          cases_test_meta[case_id & cases_test_meta_mask].len = len;
           memcpy(&buf[bufptr], ptr, len);
           bufptr += len;
+
           memcpy(&buf[bufptr], test_epilogue, epilogue_len);    
           bufptr += epilogue_len;
+
           cases += 1;
           case_id += 1;
-          ptr = task_advance(&test, &len);
+          ptr = task_advance(&test, &len, &cases_test_meta[case_id & cases_test_meta_mask].expected);
         } else {
           break;
         }
@@ -122,8 +136,12 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
       // Run for all variations of inputs.
       struct metastate_case meta_case;
       for (int c = 0; c < cases; ++c) {
+        int case_id = start_case_id + c;
         meta_case.case_id = case_id;
         meta_case.uptime = (uint64_t)difftime(tc, start);
+        meta_case.test_data = cases_test_meta[case_id & cases_test_meta_mask].data;
+        meta_case.test_data_len = cases_test_meta[case_id & cases_test_meta_mask].len;
+        meta_case.expected = &cases_test_meta[case_id & cases_test_meta_mask].expected;
 
         for (int r = 0; r < 32; ++r) {
           while(!DSP_CheckMailFrom())
@@ -133,7 +151,11 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
           meta_case.result.gpr[31 - r] = mail;
         }
 
-        cb_case(&meta_case);
+        if (!cb_case(&meta_case)) {
+          DSP_Reset();
+          ptr = NULL;
+          break;
+        }
       }
     } while(ptr);
   }

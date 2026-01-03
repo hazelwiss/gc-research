@@ -2,7 +2,7 @@ include ../../../common/build.mk
 build: dsp-test-all.iso dsp-test-nop.dol 
 dsp-test-nop.dol: dsp-test-nop.elf
 dsp-test-nop.elf: dsp-test-nop.o
-dsp-test-all.iso: dsp-test-all.dol nop.bin 
+dsp-test-all.iso: dsp-test-all.dol nop.bin ../results/nop.result.bin 
 dsp-test-all.dol: dsp-test-all.elf
 dsp-test-all.elf: dsp-test-all.o
 package: build
