@@ -33,3 +33,7 @@ bytemuck = { version = "1.22.0", features = ["min_const_generics", "derive", "ex
 rand = "0.9.2"
 anyhow = "1.0.0"
 tempdir = "0.3.7"
+
+# Increase optimization for debug builds
+[profile.dev]
+opt-level = 2

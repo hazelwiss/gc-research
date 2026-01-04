@@ -31,9 +31,122 @@ impl Test {
     }
 }
 
-const TESTS: &[Test] = &[Test::new("nop", |e| {
-    e.nop();
-})];
+const TESTS: &[Test] = &[
+    // nop test
+    Test::new("nop", |e| {
+        e.nop();
+    }),
+    // Main opcode tests.
+    Test::new("abs", |e| {
+        e.abs();
+    }),
+    Test::new("add", |e| {}),
+    Test::new("addarn", |e| {}),
+    Test::new("addax", |e| {}),
+    Test::new("addaxl", |e| {}),
+    Test::new("addi", |e| {}),
+    Test::new("addis", |e| {}),
+    Test::new("addp", |e| {}),
+    Test::new("addpaxz", |e| {}),
+    Test::new("addr", |e| {}),
+    Test::new("andc", |e| {}),
+    Test::new("andcf", |e| {}),
+    Test::new("andf", |e| {}),
+    Test::new("andi", |e| {}),
+    Test::new("andr", |e| {}),
+    Test::new("asl", |e| {}),
+    Test::new("asr", |e| {}),
+    Test::new("asr", |e| {}),
+    Test::new("asrn", |e| {}),
+    Test::new("asrnr", |e| {}),
+    Test::new("asrnrx", |e| {}),
+    Test::new("asr16", |e| {}),
+    Test::new("bloop", |e| {}),
+    Test::new("bloopi", |e| {}),
+    Test::new("clr15", |e| {}),
+    Test::new("clr", |e| {}),
+    Test::new("clrl", |e| {}),
+    Test::new("clrp", |e| {}),
+    Test::new("cmp", |e| {}),
+    Test::new("cmpaxh", |e| {}),
+    Test::new("cmpi", |e| {}),
+    Test::new("dec", |e| {}),
+    Test::new("decm", |e| {}),
+    Test::new("iar", |e| {}),
+    Test::new("ifcc", |e| {}),
+    Test::new("inc", |e| {}),
+    Test::new("incm", |e| {}),
+    Test::new("loop", |e| {}),
+    Test::new("loopi", |e| {}),
+    Test::new("lsl", |e| {}),
+    Test::new("lsl16", |e| {}),
+    Test::new("lsr", |e| {}),
+    Test::new("lsrn", |e| {}),
+    Test::new("lsrnr", |e| {}),
+    Test::new("lsrnrx", |e| {}),
+    Test::new("lsr16", |e| {}),
+    Test::new("m0", |e| {}),
+    Test::new("m2", |e| {}),
+    Test::new("madd", |e| {}),
+    Test::new("maddc", |e| {}),
+    Test::new("maddx", |e| {}),
+    Test::new("mov", |e| {}),
+    Test::new("movax", |e| {}),
+    Test::new("movnp", |e| {}),
+    Test::new("movp", |e| {}),
+    Test::new("movpz", |e| {}),
+    Test::new("movr", |e| {}),
+    Test::new("mrr", |e| {}),
+    Test::new("msub", |e| {}),
+    Test::new("msubc", |e| {}),
+    Test::new("msubx", |e| {}),
+    Test::new("mul", |e| {}),
+    Test::new("mulac", |e| {}),
+    Test::new("mulaxh", |e| {}),
+    Test::new("mulc", |e| {}),
+    Test::new("mulcac", |e| {}),
+    Test::new("mulcmv", |e| {}),
+    Test::new("mulcmvz", |e| {}),
+    Test::new("mulmv", |e| {}),
+    Test::new("mulmvz", |e| {}),
+    Test::new("mulx", |e| {}),
+    Test::new("mulxac", |e| {}),
+    Test::new("mulxmv", |e| {}),
+    Test::new("mulxmvz", |e| {}),
+    Test::new("neg", |e| {}),
+    Test::new("not", |e| {}),
+    Test::new("orc", |e| {}),
+    Test::new("ori", |e| {}),
+    Test::new("orr", |e| {}),
+    Test::new("sbclr", |e| {}),
+    Test::new("sbset", |e| {}),
+    Test::new("set15", |e| {}),
+    Test::new("set16", |e| {}),
+    Test::new("set40", |e| {}),
+    Test::new("sub", |e| {}),
+    Test::new("subarn", |e| {}),
+    Test::new("subax", |e| {}),
+    Test::new("subp", |e| {}),
+    Test::new("subr", |e| {}),
+    Test::new("tst", |e| {}),
+    Test::new("tstaxh", |e| {}),
+    Test::new("tstprod", |e| {}),
+    Test::new("xorc", |e| {}),
+    Test::new("xori", |e| {}),
+    Test::new("xorr", |e| {}),
+    // Extended opcode tests.
+    Test::new("dr", |e| {}),
+    Test::new("ir", |e| {}),
+    Test::new("mv", |e| {}),
+    Test::new("nr", |e| {}),
+    // TODO:
+    // - load/store main operations
+    // - load/store extended operations
+    // - branching (jmp, call, ret, rti)
+    // - nested loop tests
+    // - results from extended operations coliding with main operation
+    // - exception specific tests
+];
 
 fn main() -> anyhow::Result<()> {
     let out_dir = PathBuf::from(

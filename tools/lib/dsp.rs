@@ -1,6 +1,6 @@
 use crate::dspemit::{Cond, Emitter, regs};
 
-pub const GEN_DSP_INPUTS: usize = 35000;
+pub const GEN_DSP_INPUTS: usize = 50000;
 
 pub struct InputState {
     pub regs: [u16; 32],
@@ -15,11 +15,12 @@ impl InputState {
 }
 
 pub fn block_start(e: &mut Emitter) {
-    for _ in 0..16 {
-        e.nop();
+    for i in 0..8 {
+        e.jcc(Cond::Always, 0x20 + i * 3);
     }
+
     // True start
-    e.jcc(Cond::Always, 0x20);
+    e.jcc(Cond::Always, 0x40);
 
     // 0x12 : write r31 to cpu
     e.si(0xfc, 0);
@@ -33,7 +34,16 @@ pub fn block_start(e: &mut Emitter) {
         panic!("should never happen");
     }
 
-    while e.len() < 0x20 {
+    for i in 0..8 {
+        e.lri(i, 0xbeef);
+        e.rti(Cond::Always);
+    }
+
+    if e.len() >= 0x40 {
+        panic!("should never happen");
+    }
+
+    while e.len() < 0x40 {
         e.nop();
     }
 }

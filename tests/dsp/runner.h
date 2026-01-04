@@ -112,6 +112,11 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
         }
       }  
 
+      if (case_id == start_case_id) {
+        printf("Test was too large! This is a bug!\n");
+        while(1);
+      }
+
       if (bufptr + sizeof(block_end) > sizeof(buf)) {
         printf("Overflow bug!\n");
         while(1);
