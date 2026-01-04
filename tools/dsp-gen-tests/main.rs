@@ -18,7 +18,7 @@ const SEED: [u8; 32] = [
 
 struct Test {
     name: &'static str,
-    body: fn(&mut Emitter, &mut rand::rngs::SmallRng),
+    body: fn(&mut Emitter, &mut rand::rngs::SmallRng, u16),
     // If the test is custom and if it is custom, how many of them are there.
     //
     // A custom test is one which does not make use of the generated prologue/epilogue code
@@ -28,7 +28,10 @@ struct Test {
 }
 
 impl Test {
-    const fn new(name: &'static str, body: fn(&mut Emitter, &mut rand::rngs::SmallRng)) -> Self {
+    const fn new(
+        name: &'static str,
+        body: fn(&mut Emitter, &mut rand::rngs::SmallRng, u16),
+    ) -> Self {
         Self {
             name,
             body,
@@ -83,188 +86,184 @@ fn cond(r: &mut rand::rngs::SmallRng) -> Cond {
 
 const TESTS: &[Test] = &[
     // nop test
-    Test::new("nop", |e, _| {
+    Test::new("nop", |e, _, _| {
         e.nop();
     }),
     // Main opcode tests.
-    Test::new("abs", |e, r| {
+    Test::new("abs", |e, r, _| {
         e.abs(r.random::<bool>(), ext(r));
     }),
-    Test::new("add", |e, r| {
+    Test::new("add", |e, r, _| {
         e.add(r.random::<bool>(), ext(r));
     }),
-    Test::new("addarn", |e, r| {
+    Test::new("addarn", |e, r, _| {
         e.addarn(r.random::<u8>(), r.random::<u8>())
     }),
-    Test::new("addax", |e, r| {
+    Test::new("addax", |e, r, _| {
         e.addax(r.random::<u8>(), r.random::<u8>(), ext(r))
     }),
-    Test::new("addaxl", |e, r| {
+    Test::new("addaxl", |e, r, _| {
         e.addaxl(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("addi", |e, r| {
+    Test::new("addi", |e, r, _| {
         e.addi(r.random::<bool>(), r.random());
     }),
-    Test::new("addis", |e, r| {
+    Test::new("addis", |e, r, _| {
         e.addis(r.random::<bool>(), r.random::<u8>());
     }),
-    Test::new("addp", |e, r| e.addp(r.random::<bool>(), ext(r))),
-    Test::new("addpaxz", |e, r| {
+    Test::new("addp", |e, r, _| e.addp(r.random::<bool>(), ext(r))),
+    Test::new("addpaxz", |e, r, _| {
         e.addpaxz(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("addr", |e, r| {
+    Test::new("addr", |e, r, _| {
         e.addr(r.random::<bool>(), r.random::<u8>(), ext(r))
     }),
-    Test::new("andc", |e, r| e.andc(r.random::<bool>(), ext(r))),
-    Test::new("andcf", |e, r| e.andcf(r.random::<bool>(), r.random())),
-    Test::new("andf", |e, r| e.andf(r.random::<bool>(), r.random())),
-    Test::new("andi", |e, r| {
+    Test::new("andc", |e, r, _| e.andc(r.random::<bool>(), ext(r))),
+    Test::new("andcf", |e, r, _| e.andcf(r.random::<bool>(), r.random())),
+    Test::new("andf", |e, r, _| e.andf(r.random::<bool>(), r.random())),
+    Test::new("andi", |e, r, _| {
         e.andi(r.random::<bool>(), r.random());
     }),
-    Test::new("andr", |e, r| {
+    Test::new("andr", |e, r, _| {
         e.andr(r.random::<bool>(), r.random::<bool>(), ext7(r))
     }),
-    Test::new("asl", |e, r| e.asl(r.random::<bool>(), r.random::<u8>())),
-    Test::new("asr", |e, r| {
+    Test::new("asl", |e, r, _| e.asl(r.random::<bool>(), r.random::<u8>())),
+    Test::new("asr", |e, r, _| {
         e.asr(r.random::<bool>(), r.random::<u8>());
     }),
-    Test::new("asrn", |e, _| e.asrn()),
-    Test::new("asrnr", |e, r| {
+    Test::new("asrn", |e, _, _| e.asrn()),
+    Test::new("asrnr", |e, r, _| {
         e.asrnr(r.random::<bool>(), ext7(r));
     }),
-    Test::new("asrnrx", |e, r| {
+    Test::new("asrnrx", |e, r, _| {
         e.asrnrx(r.random::<bool>(), r.random::<bool>(), ext7(r));
     }),
-    Test::new("asr16", |e, r| {
+    Test::new("asr16", |e, r, _| {
         e.asr16(r.random::<bool>(), ext(r));
     }),
-    Test::new("bloop", |e, r| {
-        e.bloop(r.random::<u8>(), r.random());
-        e.add(r.random::<bool>(), ext(r));
-    }),
-    Test::new("bloopi", |e, r| {
-        e.bloopi(r.random::<u8>(), r.random());
-        e.add(r.random::<bool>(), ext(r));
-    }),
-    Test::new("clr15", |e, r| {
+    Test::new("clr15", |e, r, _| {
         e.clr15(ext(r));
     }),
-    Test::new("clr", |e, r| {
+    Test::new("clr", |e, r, _| {
         e.clr(r.random::<bool>(), ext(r));
     }),
-    Test::new("clrl", |e, r| {
+    Test::new("clrl", |e, r, _| {
         e.clrl(r.random::<bool>(), ext(r));
     }),
-    Test::new("clrp", |e, r| {
+    Test::new("clrp", |e, r, _| {
         e.clrp(ext(r));
     }),
-    Test::new("cmp", |e, r| {
+    Test::new("cmp", |e, r, _| {
         e.cmp(ext(r));
     }),
-    Test::new("cmpaxh", |e, r| {
+    Test::new("cmpaxh", |e, r, _| {
         e.cmpaxh(r.random::<bool>(), ext(r));
     }),
-    Test::new("cmpi", |e, r| e.cmpi(r.random::<bool>(), r.random())),
-    Test::new("dec", |e, r| {
+    Test::new("cmpi", |e, r, _| e.cmpi(r.random::<bool>(), r.random())),
+    Test::new("dec", |e, r, _| {
         e.dec(r.random::<bool>(), ext(r));
     }),
-    Test::new("decm", |e, r| {
+    Test::new("decm", |e, r, _| {
         e.decm(r.random::<bool>(), ext(r));
     }),
-    Test::new("iar", |e, r| {
+    Test::new("iar", |e, r, _| {
         e.iar(r.random::<u8>());
     }),
-    Test::new("ifcc", |e, r| {
+    Test::new("ifcc", |e, r, _| {
         e.ifcc(cond(r));
-        e.add(r.random::<bool>(), ext(r));
+        if r.random::<bool>() {
+            e.add(r.random::<bool>(), ext(r));
+        } else {
+            e.addi(r.random::<bool>(), r.random());
+        }
     }),
-    Test::new("inc", |e, r| {
+    Test::new("inc", |e, r, _| {
         e.inc(r.random::<bool>(), ext(r));
     }),
-    Test::new("incm", |e, r| {
+    Test::new("incm", |e, r, _| {
         e.incm(r.random::<bool>(), ext(r));
     }),
-    Test::new("loop", |e, r| {
+    Test::new("loop", |e, r, _| {
         e.loop_(r.random::<u8>());
         e.add(r.random::<bool>(), ext(r));
     }),
-    Test::new("loopi", |e, r| {
+    Test::new("loopi", |e, r, _| {
         e.loopi(r.random::<u8>());
         e.add(r.random::<bool>(), ext(r))
     }),
-    Test::new("lsl", |e, r| {
+    Test::new("lsl", |e, r, _| {
         e.lsl(r.random::<bool>(), r.random::<u8>());
     }),
-    Test::new("lsl16", |e, r| {
+    Test::new("lsl16", |e, r, _| {
         e.lsl16(r.random::<bool>(), ext(r));
     }),
-    Test::new("lsr", |e, r| e.lsr(r.random::<bool>(), r.random::<u8>())),
-    Test::new("lsrn", |e, _| {
+    Test::new("lsr", |e, r, _| e.lsr(r.random::<bool>(), r.random::<u8>())),
+    Test::new("lsrn", |e, _, _| {
         e.lsrn();
     }),
-    Test::new("lsrnr", |e, r| {
+    Test::new("lsrnr", |e, r, _| {
         e.lsrnr(r.random::<bool>(), ext7(r));
     }),
-    Test::new("lsrnrx", |e, r| {
+    Test::new("lsrnrx", |e, r, _| {
         e.lsrnrx(r.random::<bool>(), r.random::<bool>(), ext7(r));
     }),
-    Test::new("lsr16", |e, r| {
+    Test::new("lsr16", |e, r, _| {
         e.lsr16(r.random::<bool>(), ext(r));
     }),
-    Test::new("m0", |e, r| {
+    Test::new("m0", |e, r, _| {
         e.m0(ext(r));
     }),
-    Test::new("m2", |e, r| {
+    Test::new("m2", |e, r, _| {
         e.m2(ext(r));
     }),
-    Test::new("madd", |e, r| {
+    Test::new("madd", |e, r, _| {
         e.madd(r.random::<bool>(), ext(r));
     }),
-    Test::new("maddc", |e, r| {
+    Test::new("maddc", |e, r, _| {
         e.maddc(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("maddx", |e, r| {
+    Test::new("maddx", |e, r, _| {
         e.maddx(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("mov", |e, r| e.mov(r.random::<bool>(), ext(r))),
-    Test::new("movax", |e, r| {
+    Test::new("mov", |e, r, _| e.mov(r.random::<bool>(), ext(r))),
+    Test::new("movax", |e, r, _| {
         e.movax(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("movnp", |e, r| {
+    Test::new("movnp", |e, r, _| {
         e.movnp(r.random::<bool>(), ext(r));
     }),
-    Test::new("movp", |e, r| {
+    Test::new("movp", |e, r, _| {
         e.movp(r.random::<bool>(), ext(r));
     }),
-    Test::new("movpz", |e, r| {
+    Test::new("movpz", |e, r, _| {
         e.movpz(r.random::<bool>(), ext(r));
     }),
-    Test::new("movr", |e, r| {
+    Test::new("movr", |e, r, _| {
         e.movr(r.random::<bool>(), r.random::<u8>(), ext(r));
     }),
-    Test::new("mrr", |e, r| e.mrr(r.random::<u8>(), r.random::<u8>())),
-    Test::new("msub", |e, r| {
+    Test::new("mrr", |e, r, _| e.mrr(r.random::<u8>(), r.random::<u8>())),
+    Test::new("msub", |e, r, _| {
         e.msub(r.random::<bool>(), ext(r));
     }),
-    Test::new("msubc", |e, r| {
+    Test::new("msubc", |e, r, _| {
         e.msubc(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("msubx", |e, r| {
+    Test::new("msubx", |e, r, _| {
         e.msubc(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("mul", |e, r| {
+    Test::new("mul", |e, r, _| {
         e.mul(r.random::<bool>(), ext(r));
     }),
-    Test::new("mulac", |e, r| {
+    Test::new("mulac", |e, r, _| {
         e.mulac(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("mulaxh", |e, r| {
+    Test::new("mulaxh", |e, r, _| {
         e.mulaxh(ext(r));
     }),
-    Test::new("mulc", |e, r| {
+    Test::new("mulc", |e, r, _| {
         e.mulc(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("mulcac", |e, r| {
+    Test::new("mulcac", |e, r, _| {
         e.mulcac(
             r.random::<bool>(),
             r.random::<bool>(),
@@ -272,7 +271,7 @@ const TESTS: &[Test] = &[
             ext(r),
         );
     }),
-    Test::new("mulcmv", |e, r| {
+    Test::new("mulcmv", |e, r, _| {
         e.mulcmv(
             r.random::<bool>(),
             r.random::<bool>(),
@@ -280,7 +279,7 @@ const TESTS: &[Test] = &[
             ext(r),
         );
     }),
-    Test::new("mulcmvz", |e, r| {
+    Test::new("mulcmvz", |e, r, _| {
         e.mulcmvz(
             r.random::<bool>(),
             r.random::<bool>(),
@@ -288,16 +287,16 @@ const TESTS: &[Test] = &[
             ext(r),
         );
     }),
-    Test::new("mulmv", |e, r| {
+    Test::new("mulmv", |e, r, _| {
         e.mulmv(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("mulmvz", |e, r| {
+    Test::new("mulmvz", |e, r, _| {
         e.mulmvz(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("mulx", |e, r| {
+    Test::new("mulx", |e, r, _| {
         e.mulx(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("mulxac", |e, r| {
+    Test::new("mulxac", |e, r, _| {
         e.mulxac(
             r.random::<bool>(),
             r.random::<bool>(),
@@ -305,7 +304,7 @@ const TESTS: &[Test] = &[
             ext(r),
         );
     }),
-    Test::new("mulxmv", |e, r| {
+    Test::new("mulxmv", |e, r, _| {
         e.mulxmv(
             r.random::<bool>(),
             r.random::<bool>(),
@@ -313,7 +312,7 @@ const TESTS: &[Test] = &[
             ext(r),
         )
     }),
-    Test::new("mulxmvz", |e, r| {
+    Test::new("mulxmvz", |e, r, _| {
         e.mulxmvz(
             r.random::<bool>(),
             r.random::<bool>(),
@@ -321,75 +320,76 @@ const TESTS: &[Test] = &[
             ext(r),
         );
     }),
-    Test::new("neg", |e, r| e.neg(r.random::<bool>(), ext(r))),
-    Test::new("not", |e, r| e.neg(r.random::<bool>(), ext(r))),
-    Test::new("orc", |e, r| e.orc(r.random::<bool>(), ext7(r))),
-    Test::new("ori", |e, r| {
+    Test::new("neg", |e, r, _| e.neg(r.random::<bool>(), ext(r))),
+    Test::new("not", |e, r, _| e.neg(r.random::<bool>(), ext(r))),
+    Test::new("orc", |e, r, _| e.orc(r.random::<bool>(), ext7(r))),
+    Test::new("ori", |e, r, _| {
         e.ori(r.random::<bool>(), r.random());
     }),
-    Test::new("orr", |e, r| {
+    Test::new("orr", |e, r, _| {
         e.orr(r.random::<bool>(), r.random::<bool>(), ext7(r))
     }),
-    Test::new("sbclr", |e, r| {
+    Test::new("sbclr", |e, r, _| {
         e.sbclr(r.random::<u8>());
     }),
-    Test::new("sbset", |e, r| {
+    Test::new("sbset", |e, r, _| {
         e.sbset(r.random::<u8>());
     }),
-    Test::new("set15", |e, r| {
+    Test::new("set15", |e, r, _| {
         e.set15(ext(r));
     }),
-    Test::new("set16", |e, r| {
+    Test::new("set16", |e, r, _| {
         e.set16(ext(r));
     }),
-    Test::new("set40", |e, r| {
+    Test::new("set40", |e, r, _| {
         e.set40(ext(r));
     }),
-    Test::new("sub", |e, r| {
+    Test::new("sub", |e, r, _| {
         e.sub(r.random::<bool>(), ext(r));
     }),
-    Test::new("subarn", |e, r| {
+    Test::new("subarn", |e, r, _| {
         e.subarn(r.random::<u8>());
     }),
-    Test::new("subax", |e, r| {
+    Test::new("subax", |e, r, _| {
         e.subax(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("subp", |e, r| {
+    Test::new("subp", |e, r, _| {
         e.subp(r.random::<bool>(), r.random::<bool>(), ext(r));
     }),
-    Test::new("subr", |e, r| {
+    Test::new("subr", |e, r, _| {
         e.subr(r.random::<bool>(), r.random::<u8>(), ext(r))
     }),
-    Test::new("tst", |e, r| {
+    Test::new("tst", |e, r, _| {
         e.tst(r.random::<bool>(), ext(r));
     }),
-    Test::new("tstaxh", |e, r| {
+    Test::new("tstaxh", |e, r, _| {
         e.tstaxh(r.random::<bool>(), ext(r));
     }),
-    Test::new("tstprod", |e, r| {
+    Test::new("tstprod", |e, r, _| {
         e.tstprod(ext(r));
     }),
-    Test::new("xorc", |e, r| {
+    Test::new("xorc", |e, r, _| {
         e.xorc(r.random::<bool>(), ext7(r));
     }),
-    Test::new("xori", |e, r| {
+    Test::new("xori", |e, r, _| {
         e.xori(r.random::<bool>(), r.random());
     }),
-    Test::new("xorr", |e, r| {
+    Test::new("xorr", |e, r, _| {
         e.xorr(r.random::<bool>(), r.random::<bool>(), ext7(r));
     }),
     // Extended opcode tests.
-    Test::new("dr", |e, r| e.nx(ext::Dr(r.random::<u8>()))),
-    Test::new("ir", |e, r| e.nx(ext::Ir(r.random::<u8>()))),
-    Test::new("mv", |e, r| {
+    Test::new("dr", |e, r, _| e.nx(ext::Dr(r.random::<u8>()))),
+    Test::new("ir", |e, r, _| e.nx(ext::Ir(r.random::<u8>()))),
+    Test::new("mv", |e, r, _| {
         e.nx(ext::Mv(r.random::<u8>(), r.random::<u8>()))
     }),
-    Test::new("nr", |e, r| e.nx(ext::Nr(r.random::<u8>()))),
+    Test::new("nr", |e, r, _| e.nx(ext::Nr(r.random::<u8>()))),
     // TODO:
     // - load/store main operations
     // - load/store extended operations
     // - branching (jmp, call, ret, rti)
-    // - nested loop tests
+    // - regular bloop tests
+    // - nested bloop tests
     // - results from extended operations coliding with main operation
     // - exception specific tests
 ];
@@ -409,6 +409,23 @@ fn main() -> anyhow::Result<()> {
     let mut rand = rand::rngs::SmallRng::from_seed(SEED);
 
     let result_dir = PathBuf::from("../tests/dsp/results");
+
+    let prologue_len = {
+        let mut e: Emitter = Emitter::default();
+        tools::dsp::test_prologue(&mut e, Some(tools::dsp::InputState::default()));
+        u16::try_from(e.len()).unwrap()
+    };
+    let epilogue_len = {
+        let mut e: Emitter = Emitter::default();
+        tools::dsp::test_epilogue(&mut e);
+        u16::try_from(e.len()).unwrap()
+    };
+
+    let block_start_len = {
+        let mut e: Emitter = Emitter::default();
+        tools::dsp::block_start(&mut e);
+        u16::try_from(e.len()).unwrap()
+    };
 
     let mut binary_rules = "".to_string();
     let mut results_files = vec![];
@@ -432,8 +449,23 @@ fn main() -> anyhow::Result<()> {
             e.emit(u16::from_be_bytes(b));
         }
 
+        let mut adr = block_start_len;
         for _ in 0..total_tasks {
-            (cur.body)(&mut e, &mut rand);
+            if cur.custom.is_none() {
+                adr += prologue_len;
+            }
+
+            let size_before = e.len();
+            (cur.body)(&mut e, &mut rand, adr);
+            // Emit a nop in the case the test runs an exception and needs to return to
+            // the instruction after the fault.
+            e.nop();
+
+            adr += u16::try_from(e.len() - size_before).unwrap();
+            if cur.custom.is_none() {
+                adr += epilogue_len;
+            }
+
             e.emit_invalid_mark();
         }
 
@@ -513,7 +545,10 @@ fn main() -> anyhow::Result<()> {
             .iter()
             .map(|s| s
                 .as_ref()
-                .map(|s| format!("\t\"dvd:/{}.bin\"", s))
+                .map(|s| format!(
+                    "\t\"dvd:/{}\"",
+                    PathBuf::from(s).file_name().unwrap().display()
+                ))
                 .unwrap_or_else(|| "\t0".to_string()))
             .intersperse(",\n".to_string())
             .collect::<String>(),

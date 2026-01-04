@@ -734,7 +734,7 @@ impl Emitter {
     }
 
     pub fn asrn(&mut self) {
-        self.e(0b0000_0010_1101_1011);
+        self.e(0b0000_0010_1100_1011);
     }
 
     pub fn asrnr(&mut self, d: impl RegAc, ext: impl ExtendedOpcode7) {

@@ -26,6 +26,9 @@ bool tasks_advance(struct test* ret) {
   if (file_idx >= file_cnt) return false;
 
   const char* name = files[file_idx];
+  if (fp) {
+    fclose(fp);
+  }
   fp = fopen(name, "rb");
   if (!fp) {
     printf("Error opening file '%s' with error: %s\n", name, strerror(errno));
@@ -33,12 +36,17 @@ bool tasks_advance(struct test* ret) {
   }
 
   const char* res_name = result_files[file_idx];
+  if (res_fp) {
+    fclose(res_fp);
+  }
   if (res_name) {
-    res_fp = fopen(name, "rb");
+    res_fp = fopen(res_name, "rb");
     if (!res_fp) {
-      printf("Error opening result file '%s' with error: %s\n", name, strerror(errno));
+      printf("Error opening result file '%s' with error: %s\n", res_name, strerror(errno));
       while(1);
     }    
+  } else {
+    res_fp = 0;
   }
 
   file_idx += 1;
@@ -84,8 +92,9 @@ uint8_t* task_advance(struct test* task, uint32_t* size, struct state* expected_
     copy_buf[i] = task_state.buf[task_state.bufptr++];
     if(copy_buf[i] == 0b0000'0000'1010'0000) {
       if (task_state.res_fp) {
-        if (fread(expected_result, sizeof(struct state), 1, task_state.res_fp) != 1) {
-          printf("Failed to read results from file\n");
+        int read;
+        if (read = fread(expected_result, sizeof(struct state), 1, task_state.res_fp), read != 1) {
+          printf("Failed to read results from file; fread returned %d instead of 1\n", read);
           while(1);
         };
       } else {

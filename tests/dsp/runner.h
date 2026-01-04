@@ -14,7 +14,7 @@
 /// Runner initialization meta data
 struct metastate_init {
   /// The total amount of tasks to do.
-  uint32_t total_tasks;
+  uint32_t total_tests;
 };
 
 /// Runner test meta data
@@ -49,14 +49,15 @@ static uint8_t __attribute__((aligned(32))) buf[0x2000];
 typedef void(*callback_init_t)(struct metastate_init*);
 typedef void(*callback_test_t)(struct metastate_test*);
 typedef bool(*callback_case_t)(struct metastate_case*);
+typedef void(*callback_case_timeout_t)(struct metastate_case*);
 
-void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_case) {
+void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_case, callback_case_timeout_t cb_timeout) {
 
   time_t tc, start = time(NULL);
   uint32_t total_tasks = tasks_len();
 
   struct metastate_init meta_init;
-  meta_init.total_tasks = total_tasks;
+  meta_init.total_tests = total_tasks;
   cb_init(&meta_init);
 
   struct test test;
@@ -69,13 +70,17 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
     meta_test.test_id = test_id;
     cb_test(&meta_test);
 
-    struct { uint32_t len; uint8_t* data; struct state expected; } cases_test_meta[128];
+    struct { uint32_t len; uint8_t* data; struct state expected; } cases_test_meta[256];
     uint32_t cases_test_meta_mask = (sizeof(cases_test_meta) / sizeof(*cases_test_meta)) - 1;
 
     uint32_t case_id = 0;
     uint32_t len = 0;
     uint32_t bufptr = 0;
     uint8_t* ptr = task_advance(&test, &len, &cases_test_meta[0].expected);
+    if (!ptr) {
+      printf("Test has no case at all, this is a bug!\n");
+      while(1);
+    }
     do {
       memcpy(&buf[bufptr], block_start, sizeof(block_start));
       bufptr += sizeof(block_start);
@@ -149,8 +154,17 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
         meta_case.expected = &cases_test_meta[case_id & cases_test_meta_mask].expected;
 
         for (int r = 0; r < 32; ++r) {
-          while(!DSP_CheckMailFrom())
-            ;
+          int delay = 0;
+          while(!DSP_CheckMailFrom()) {
+            if (delay++ > 1000) {
+              if ((uint64_t)difftime(time(NULL), tc) >= 3) {
+                cb_timeout(&meta_case);
+                goto timeout;
+              } 
+              delay = 0;
+            }
+          }
+            
           uint8_t  mail = DSP_ReadMailFrom();
           mail &= 0xffff;
           meta_case.result.gpr[31 - r] = mail;
@@ -161,6 +175,11 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
           ptr = NULL;
           break;
         }
+        continue;
+      timeout:
+        DSP_Reset();
+        ptr = NULL;
+        break;
       }
     } while(ptr);
   }

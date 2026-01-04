@@ -68,7 +68,7 @@ static void display(void) {
   display_set_row(0);
   printf("\e[37m");
   printf("\33[2K\rseconds lapsed %llu\n", case_meta.uptime);
-  printf("\33[2K\rprogress: %d / %u\n", status.passed_tests + status.failed_tests, init_meta.total_tasks);
+  printf("\33[2K\rprogress: %d / %u\n", status.passed_tests + status.failed_tests, init_meta.total_tests);
   printf("\33[2K\rpassed tests: %d\n", status.passed_tests);
   printf("\33[2K\rfailed tests: %d\n", status.failed_tests);
   if (running) {
@@ -142,6 +142,7 @@ static void cbk_test (struct metastate_test* meta) {
   status.failed_cases = 0;
   status.passed_cases = 0;
   status.complete_tests += 1;
+  status.cases_since_display = 0;
 
   // Clear display for new test
   display_clear();
@@ -159,6 +160,8 @@ static bool cbk_case (struct metastate_case* meta) {
       break;
     }
   }
+
+  bool should_continue = true;
 
   if (!is_expected) {
     if (!status.has_failed_test) {
@@ -181,6 +184,8 @@ static bool cbk_case (struct metastate_case* meta) {
       memcpy(&status.fail_info[status.fail_len].test_data, meta->test_data, meta->test_data_len);
       status.fail_info[status.fail_len].test_data_len = meta->test_data_len;
       status.fail_len += 1;
+    } else {
+      should_continue = false;      
     }
   } else {
     status.passed_cases += 1;
@@ -194,7 +199,12 @@ static bool cbk_case (struct metastate_case* meta) {
   }
   status.cases_since_display += 1;
 
-  return true;
+  return should_continue;
+}
+
+static void cbk_timeout (struct metastate_case* meta) {
+  printf("TODO: timeout\n");;
+  while(1);
 }
 
 int main() {
@@ -226,7 +236,7 @@ int main() {
   printf("Mounted disk\n");
 #endif
 
-  run(cbk_init, cbk_test, cbk_case);
+  run(cbk_init, cbk_test, cbk_case, cbk_timeout);
 
   running = false;
   display_clear();

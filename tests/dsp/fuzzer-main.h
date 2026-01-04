@@ -31,6 +31,8 @@ static struct {
   size_t bufptr;
 } net = {.bufptr = sizeof(struct cmd)};
 
+static uint32_t tests_ctr;
+
 bool tasks_advance(struct test* ret) {
   // Reserve 20MiB for various task data.
   static uint8_t task_data[2 << 20];
@@ -73,6 +75,8 @@ bool tasks_advance(struct test* ret) {
     }
   } while(i > 0);
 
+  tests_ctr = 0;
+
   *ret = (struct test) {
     .header = (struct testheader*)task_data,
     .impl_data = &task_data[sizeof(struct testheader)],
@@ -101,11 +105,10 @@ uint64_t tasks_len(void) {
 
 uint8_t* task_advance(struct test* task, uint32_t* size, struct state* expected) {
   static uint16_t buf[0x1000];
-  static uint32_t tasks;
   memset(expected, 0, sizeof(*expected));
   *size = 0;
 
-  if (tasks >= task->header->cases) {
+  if (tests_ctr >= task->header->cases) {
     return NULL;
   }
 
@@ -114,7 +117,7 @@ uint8_t* task_advance(struct test* task, uint32_t* size, struct state* expected)
 
     // Stop character
     if (buf[i] == 0b0000'0000'1010'0000) {
-      tasks += 1;
+      tests_ctr += 1;
       return (uint8_t*)buf;
     }
     *size += 2;
@@ -149,13 +152,12 @@ static struct metastate_test* test_meta;
 
 static void cbk_init (struct metastate_init* meta) {
   init_meta = meta;
-
-  printf("\e[1;1H\e[2J");
-  printf("Total tasks: %u\n", meta->total_tasks);  
 }
 
 static void cbk_test (struct metastate_test* meta) {
   test_meta = meta;
+
+  printf("new test: %s\n", meta->name);  
 
   flush();
 
@@ -182,10 +184,7 @@ static void cbk_test (struct metastate_test* meta) {
 }
 
 static bool cbk_case (struct metastate_case* meta) {
-  printf("\x1b[%d;0H", 2);
-  printf("seconds lapsed %llu\n", meta->uptime);
-  printf("complete: %d / %u\n", test_meta->test_id, init_meta->total_tasks);
-  printf("processing %s %d / %u...\n", test_meta->name, meta->case_id, test_meta->total_cases);  
+  printf("%s %d / %u...\n", test_meta->name, meta->case_id + 1, test_meta->total_cases);  
 
   if ((net.bufptr + sizeof(struct state)) >= sizeof(net.buffer)) {
     flush();
@@ -195,6 +194,11 @@ static bool cbk_case (struct metastate_case* meta) {
   net.bufptr += sizeof(struct state);
 
   return true;
+}
+
+static void cbk_timeout (struct metastate_case* meta) {
+  printf("Timeout! This should never happen for the fuzzer\n");
+  while(1);
 }
 
 int main() {
@@ -273,7 +277,7 @@ int main() {
   printf("DSP fuzzer; client %s\n", client_addr_print);
   VIDEO_WaitVSync();
 
-  run(cbk_init, cbk_test, cbk_case);
+  run(cbk_init, cbk_test, cbk_case, cbk_timeout);
   flush();
 
   uint8_t final_cmd_buf[sizeof(struct cmd)];
