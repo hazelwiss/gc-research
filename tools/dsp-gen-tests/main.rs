@@ -2,8 +2,9 @@
 #![feature(file_buffered)]
 #![feature(iter_array_chunks)]
 
+use rand::Rng;
 use std::path::PathBuf;
-use tools::dspemit::Emitter;
+use tools::dspemit::{Cond, Emitter, ExtendedOpcode, ExtendedOpcode7, ext};
 
 const SYSTEM_MEM: usize = 24 << 20;
 // At least ensure 5MiB of system memory is not taken up by a single test.
@@ -12,7 +13,7 @@ const DISK_MAX_STORAGE: usize = 1400 << 20;
 
 struct Test {
     name: &'static str,
-    body: fn(&mut Emitter),
+    body: fn(&mut Emitter, rand::rngs::SmallRng),
     // If the test is custom and if it is custom, how many of them are there.
     //
     // A custom test is one which does not make use of the generated prologue/epilogue code
@@ -22,7 +23,7 @@ struct Test {
 }
 
 impl Test {
-    const fn new(name: &'static str, body: fn(&mut Emitter)) -> Self {
+    const fn new(name: &'static str, body: fn(&mut Emitter, &mut rand::rngs::SmallRng)) -> Self {
         Self {
             name,
             body,
@@ -31,114 +32,276 @@ impl Test {
     }
 }
 
+fn ext(r: &mut rand::rngs::SmallRng) -> impl ExtendedOpcode {}
+
+fn ext7(r: &mut rand::rngs::SmallRng) -> impl ExtendedOpcode7 {}
+
+fn cond(r: &mut rand::rngs::SmallRng) -> Cond {}
+
+fn u2b(u: usize) -> bool {
+    u & 1 != 0
+}
+
 const TESTS: &[Test] = &[
     // nop test
-    Test::new("nop", |e| {
+    Test::new("nop", |e, _| {
         e.nop();
     }),
     // Main opcode tests.
-    Test::new("abs", |e| {
-        e.abs();
+    Test::new("abs", |e, r| {
+        e.abs(r.random(), ext(r));
     }),
-    Test::new("add", |e| {}),
-    Test::new("addarn", |e| {}),
-    Test::new("addax", |e| {}),
-    Test::new("addaxl", |e| {}),
-    Test::new("addi", |e| {}),
-    Test::new("addis", |e| {}),
-    Test::new("addp", |e| {}),
-    Test::new("addpaxz", |e| {}),
-    Test::new("addr", |e| {}),
-    Test::new("andc", |e| {}),
-    Test::new("andcf", |e| {}),
-    Test::new("andf", |e| {}),
-    Test::new("andi", |e| {}),
-    Test::new("andr", |e| {}),
-    Test::new("asl", |e| {}),
-    Test::new("asr", |e| {}),
-    Test::new("asr", |e| {}),
-    Test::new("asrn", |e| {}),
-    Test::new("asrnr", |e| {}),
-    Test::new("asrnrx", |e| {}),
-    Test::new("asr16", |e| {}),
-    Test::new("bloop", |e| {}),
-    Test::new("bloopi", |e| {}),
-    Test::new("clr15", |e| {}),
-    Test::new("clr", |e| {}),
-    Test::new("clrl", |e| {}),
-    Test::new("clrp", |e| {}),
-    Test::new("cmp", |e| {}),
-    Test::new("cmpaxh", |e| {}),
-    Test::new("cmpi", |e| {}),
-    Test::new("dec", |e| {}),
-    Test::new("decm", |e| {}),
-    Test::new("iar", |e| {}),
-    Test::new("ifcc", |e| {}),
-    Test::new("inc", |e| {}),
-    Test::new("incm", |e| {}),
-    Test::new("loop", |e| {}),
-    Test::new("loopi", |e| {}),
-    Test::new("lsl", |e| {}),
-    Test::new("lsl16", |e| {}),
-    Test::new("lsr", |e| {}),
-    Test::new("lsrn", |e| {}),
-    Test::new("lsrnr", |e| {}),
-    Test::new("lsrnrx", |e| {}),
-    Test::new("lsr16", |e| {}),
-    Test::new("m0", |e| {}),
-    Test::new("m2", |e| {}),
-    Test::new("madd", |e| {}),
-    Test::new("maddc", |e| {}),
-    Test::new("maddx", |e| {}),
-    Test::new("mov", |e| {}),
-    Test::new("movax", |e| {}),
-    Test::new("movnp", |e| {}),
-    Test::new("movp", |e| {}),
-    Test::new("movpz", |e| {}),
-    Test::new("movr", |e| {}),
-    Test::new("mrr", |e| {}),
-    Test::new("msub", |e| {}),
-    Test::new("msubc", |e| {}),
-    Test::new("msubx", |e| {}),
-    Test::new("mul", |e| {}),
-    Test::new("mulac", |e| {}),
-    Test::new("mulaxh", |e| {}),
-    Test::new("mulc", |e| {}),
-    Test::new("mulcac", |e| {}),
-    Test::new("mulcmv", |e| {}),
-    Test::new("mulcmvz", |e| {}),
-    Test::new("mulmv", |e| {}),
-    Test::new("mulmvz", |e| {}),
-    Test::new("mulx", |e| {}),
-    Test::new("mulxac", |e| {}),
-    Test::new("mulxmv", |e| {}),
-    Test::new("mulxmvz", |e| {}),
-    Test::new("neg", |e| {}),
-    Test::new("not", |e| {}),
-    Test::new("orc", |e| {}),
-    Test::new("ori", |e| {}),
-    Test::new("orr", |e| {}),
-    Test::new("sbclr", |e| {}),
-    Test::new("sbset", |e| {}),
-    Test::new("set15", |e| {}),
-    Test::new("set16", |e| {}),
-    Test::new("set40", |e| {}),
-    Test::new("sub", |e| {}),
-    Test::new("subarn", |e| {}),
-    Test::new("subax", |e| {}),
-    Test::new("subp", |e| {}),
-    Test::new("subr", |e| {}),
-    Test::new("tst", |e| {}),
-    Test::new("tstaxh", |e| {}),
-    Test::new("tstprod", |e| {}),
-    Test::new("xorc", |e| {}),
-    Test::new("xori", |e| {}),
-    Test::new("xorr", |e| {}),
+    Test::new("add", |e, r| {
+        e.add(r.random(), ext(r));
+    }),
+    Test::new("addarn", |e, r| e.addarn(r.random(), r.random())),
+    Test::new("addax", |e, r| e.addax(r.random(), r.random(), ext(r))),
+    Test::new("addaxl", |e, r| {
+        e.addaxl(r.random(), r.random(), ext(r));
+    }),
+    Test::new("addi", |e, r| {
+        e.addi(r.random(), r.random());
+    }),
+    Test::new("addis", |e, r| {
+        e.addis(r.random(), r.random());
+    }),
+    Test::new("addp", |e, r| e.addp(r.random(), ext(r))),
+    Test::new("addpaxz", |e, r| {
+        e.addpaxz(r.random(), r.random(), ext(r));
+    }),
+    Test::new("addr", |e, r| e.addr(r.random(), r.random(), ext(r))),
+    Test::new("andc", |e, r| e.andc(r.random(), ext(r))),
+    Test::new("andcf", |e, r| e.andcf(r.random(), r.random())),
+    Test::new("andf", |e, r| e.andf(r.random(), r.random())),
+    Test::new("andi", |e, r| {
+        e.andi(r.random(), r.random());
+    }),
+    Test::new("andr", |e, r| e.andr(r.random(), r.random(), ext7(r))),
+    Test::new("asl", |e, r| e.asl(r.random(), r.random())),
+    Test::new("asr", |e, r| {
+        e.asr(r.random(), r.random());
+    }),
+    Test::new("asrn", |e, _| e.asrn()),
+    Test::new("asrnr", |e, r| {
+        e.asrnr(r.random(), ext7(r));
+    }),
+    Test::new("asrnrx", |e, r| {
+        e.asrnrx(r.random(), r.random(), ext7(r));
+    }),
+    Test::new("asr16", |e, r| {
+        e.asr16(r.random(), ext(r));
+    }),
+    Test::new("bloop", |e, r| {
+        e.bloop(r.random(), r.random());
+        e.add(r.random(), ext(r));
+    }),
+    Test::new("bloopi", |e, r| {
+        e.bloopi(r.random(), r.random());
+        e.add(r.random(), ext(r));
+    }),
+    Test::new("clr15", |e, r| {
+        e.clr15(ext(r));
+    }),
+    Test::new("clr", |e, r| {
+        e.clr(r.random(), ext(r));
+    }),
+    Test::new("clrl", |e, r| {
+        e.clrl(r.random(), ext(r));
+    }),
+    Test::new("clrp", |e, r| {
+        e.clrp(ext(r));
+    }),
+    Test::new("cmp", |e, r| {
+        e.cmp(ext(r));
+    }),
+    Test::new("cmpaxh", |e, r| {
+        e.cmpaxh(r.random(), ext(r));
+    }),
+    Test::new("cmpi", |e, r| e.cmpi(r.random(), r.random())),
+    Test::new("dec", |e, r| {
+        e.dec(r.random(), ext(r));
+    }),
+    Test::new("decm", |e, r| {
+        e.decm(r.random(), ext(r));
+    }),
+    Test::new("iar", |e, r| {
+        e.iar(r.random());
+    }),
+    Test::new("ifcc", |e, r| {
+        e.ifcc(cond(r));
+        e.add(r.random(), ext(r));
+    }),
+    Test::new("inc", |e, r| {
+        e.inc(r.random(), ext(r));
+    }),
+    Test::new("incm", |e, r| {
+        e.incm(r.random(), ext(r));
+    }),
+    Test::new("loop", |e, r| {
+        e.loop_(r.random());
+        e.add(r.random(), ext(r));
+    }),
+    Test::new("loopi", |e, r| {
+        e.loopi(r.random());
+        e.add(r.random(), ext(r))
+    }),
+    Test::new("lsl", |e, r| {
+        e.lsl(r.random(), r.random());
+    }),
+    Test::new("lsl16", |e, r| {
+        e.lsl16(r.random(), ext(r));
+    }),
+    Test::new("lsr", |e, r| e.lsr(r.random(), r.random())),
+    Test::new("lsrn", |e, _| {
+        e.lsrn();
+    }),
+    Test::new("lsrnr", |e, r| {
+        e.lsrnr(r.random(), ext7(r));
+    }),
+    Test::new("lsrnrx", |e, r| {
+        e.lsrnrx(r.random(), r.random(), ext7(r));
+    }),
+    Test::new("lsr16", |e, r| {
+        e.lsr16(r.random(), ext(r));
+    }),
+    Test::new("m0", |e, r| {
+        e.m0(ext(r));
+    }),
+    Test::new("m2", |e, r| {
+        e.m2(ext(r));
+    }),
+    Test::new("madd", |e, r| {
+        e.madd(r.random(), ext(r));
+    }),
+    Test::new("maddc", |e, r| {
+        e.maddc(r.random(), r.random(), ext(r));
+    }),
+    Test::new("maddx", |e, r| {
+        e.maddx(r.random(), r.random(), ext(r));
+    }),
+    Test::new("mov", |e, r| e.mov(r.random(), ext(r))),
+    Test::new("movax", |e, r| {
+        e.movax(r.random(), r.random(), ext(r));
+    }),
+    Test::new("movnp", |e, r| {
+        e.movnp(r.random(), ext(r));
+    }),
+    Test::new("movp", |e, r| {
+        e.movp(r.random(), ext(r));
+    }),
+    Test::new("movpz", |e, r| {
+        e.movpz(r.random(), ext(r));
+    }),
+    Test::new("movr", |e, r| {
+        e.movr(r.random(), r.random(), ext(r));
+    }),
+    Test::new("mrr", |e, r| e.mrr(r.random(), r.random())),
+    Test::new("msub", |e, r| {
+        e.msub(r.random(), ext(r));
+    }),
+    Test::new("msubc", |e, r| {
+        e.msubc(r.random(), r.random(), ext(r));
+    }),
+    Test::new("msubx", |e, r| {
+        e.msubc(r.random(), r.random(), ext(r));
+    }),
+    Test::new("mul", |e, r| {
+        e.mul(r.random(), ext(r));
+    }),
+    Test::new("mulac", |e, r| {
+        e.mulac(r.random(), r.random(), ext(r));
+    }),
+    Test::new("mulaxh", |e, r| {
+        e.mulaxh(ext(r));
+    }),
+    Test::new("mulc", |e, r| {
+        e.mulc(r.random(), r.random(), ext(r));
+    }),
+    Test::new("mulcac", |e, r| {
+        e.mulcac(r.random(), r.random(), r.random(), ext(r));
+    }),
+    Test::new("mulcmv", |e, r| {
+        e.mulcmv(r.random(), r.random(), r.random(), ext(r));
+    }),
+    Test::new("mulcmvz", |e, r| {
+        e.mulcmvz(r.random(), r.random(), r.random(), ext(r));
+    }),
+    Test::new("mulmv", |e, r| {
+        e.mulmv(r.random(), r.random(), ext(r));
+    }),
+    Test::new("mulmvz", |e, r| {
+        e.mulmvz(r.random(), r.random(), ext(r));
+    }),
+    Test::new("mulx", |e, r| {
+        e.mulx(r.random(), r.random(), ext(r));
+    }),
+    Test::new("mulxac", |e, r| {
+        e.mulxac(r.random(), r.random(), r.random(), ext(r));
+    }),
+    Test::new("mulxmv", |e, r| {
+        e.mulxmv(r.random(), r.random(), r.random(), ext(r))
+    }),
+    Test::new("mulxmvz", |e, r| {
+        e.mulxmvz(r.random(), r.random(), r.random(), ext(r));
+    }),
+    Test::new("neg", |e, r| e.neg(r.random(), ext(r))),
+    Test::new("not", |e, r| e.neg(r.random(), ext(r))),
+    Test::new("orc", |e, r| e.orc(r.random(), ext7(r))),
+    Test::new("ori", |e, r| {
+        e.ori(r.random(), r.random());
+    }),
+    Test::new("orr", |e, r| e.orr(r.random(), r.random(), ext7(r))),
+    Test::new("sbclr", |e, r| {
+        e.sbclr(r.random());
+    }),
+    Test::new("sbset", |e, r| {
+        e.sbset(r.random());
+    }),
+    Test::new("set15", |e, r| {
+        e.set15(ext(r));
+    }),
+    Test::new("set16", |e, r| {
+        e.set16(ext(r));
+    }),
+    Test::new("set40", |e, r| {
+        e.set40(ext(r));
+    }),
+    Test::new("sub", |e, r| {
+        e.sub(r.random(), ext(r));
+    }),
+    Test::new("subarn", |e, r| {
+        e.subarn(r.random());
+    }),
+    Test::new("subax", |e, r| {
+        e.subax(r.random(), r.random(), ext(r));
+    }),
+    Test::new("subp", |e, r| {
+        e.subp(r.random(), r.random(), ext(r));
+    }),
+    Test::new("subr", |e, r| e.subr(r.random(), r.random(), ext(r))),
+    Test::new("tst", |e, r| {
+        e.tst(r.random(), ext(r));
+    }),
+    Test::new("tstaxh", |e, r| {
+        e.tstaxh(r.random(), ext(r));
+    }),
+    Test::new("tstprod", |e, r| {
+        e.tstprod(ext(r));
+    }),
+    Test::new("xorc", |e, r| {
+        e.xorc(r.random(), r.random());
+    }),
+    Test::new("xori", |e, r| {
+        e.xori(r.random(), r.random());
+    }),
+    Test::new("xorr", |e, r| {
+        e.xorr(r.random(), r.random(), ext7(r));
+    }),
     // Extended opcode tests.
-    Test::new("dr", |e| {}),
-    Test::new("ir", |e| {}),
-    Test::new("mv", |e| {}),
-    Test::new("nr", |e| {}),
+    Test::new("dr", |e, r| e.nx(ext::Dr(r.random()))),
+    Test::new("ir", |e, r| e.nx(ext::Ir(r.random()))),
+    Test::new("mv", |e, r| e.nx(ext::Mv(r.random(), r.random()))),
+    Test::new("nr", |e, r| e.nx(ext::Nr(r.random()))),
     // TODO:
     // - load/store main operations
     // - load/store extended operations

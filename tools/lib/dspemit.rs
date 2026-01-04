@@ -110,7 +110,7 @@ pub trait RegAx {
     fn index(&self) -> u8;
 }
 
-impl RegIx for bool {
+impl RegAx for bool {
     fn index(&self) -> u8 {
         *self as u8
     }
