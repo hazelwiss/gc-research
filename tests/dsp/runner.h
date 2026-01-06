@@ -89,17 +89,18 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
       int start_case_id = case_id;
       while(ptr) {
         if (case_id >= sizeof(test_prologue) / sizeof(*test_prologue)) {
-          printf("Overflow bug for prologue\n");
+          printf("Overflow bug for prologue\n %d %d", start_case_id, case_id);
           while(1);
         }
-        uint32_t prologue_len = !test.header->is_custom ? sizeof(test_prologue[case_id]) : 0;
-        uint32_t epilogue_len = !test.header->is_custom ? sizeof(test_epilogue) : 0;
+        uint32_t prologue_len = sizeof(*test_prologue);
+        uint32_t epilogue_len = sizeof(test_epilogue);
         if (
           bufptr + len + prologue_len + epilogue_len < sizeof(buf) - sizeof(block_end)
           && cases < sizeof(cases_test_meta) / sizeof(*cases_test_meta)
         ) {
+
           memcpy(&buf[bufptr], test_prologue[case_id], prologue_len);
-          bufptr += prologue_len;
+          bufptr += prologue_len;            
 
           cases_test_meta[case_id & cases_test_meta_mask].data = &buf[bufptr];
           cases_test_meta[case_id & cases_test_meta_mask].len = len;
@@ -165,7 +166,7 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
             }
           }
             
-          uint8_t  mail = DSP_ReadMailFrom();
+          uint16_t mail = DSP_ReadMailFrom();
           mail &= 0xffff;
           meta_case.result.gpr[31 - r] = mail;
         }

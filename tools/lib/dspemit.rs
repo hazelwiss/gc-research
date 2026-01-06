@@ -156,6 +156,16 @@ impl RegAxH for bool {
     }
 }
 
+pub trait RegUpper8 {
+    fn index(&self) -> u8;
+}
+
+impl RegUpper8 for u8 {
+    fn index(&self) -> u8 {
+        *self & 0b111
+    }
+}
+
 pub mod regs {
     use super::*;
 
@@ -164,6 +174,7 @@ pub mod regs {
             $(
                 $(!reg:$reg:expr,)?
                 $(!reg16:$reg16:expr,)?
+                $(!up8:$up8:expr,)?
                 $(!ac:$ac:expr,)?
                 $(!aclm:$aclm:expr,)?
                 $(!acm:$acm:expr,)?
@@ -198,6 +209,15 @@ pub mod regs {
                         #[inline(always)]
                         fn index(&self) -> u8 {
                             $reg16
+                        }
+                    }
+                )?
+
+                $(
+                    impl RegUpper8 for $ident {
+                        #[inline(always)]
+                        fn index(&self) -> u8 {
+                            $up8
                         }
                     }
                 )?
@@ -329,14 +349,14 @@ pub mod regs {
         !reg:21, !alias:R21, Prodm1;
         !reg:22, !alias:R22, Prodh;
         !reg:23, !alias:R23, Prodm2;
-        !reg:24, !ax0:0, !axlh:0, !alias:R24, Ax0l;
-        !reg:25, !ax1:0, !axlh:1, !alias:R25, Ax1l;
-        !reg:26, !ax0:1, !axh:0, !axlh:2, !alias:R26, Ax0h;
-        !reg:27, !ax1:1, !axh:1, !axlh:3, !alias:R27, Ax1h;
-        !reg:28, !aclm:0, !alias:R28, Ac0l;
-        !reg:29, !aclm:1, !alias:R29, Ac1l;
-        !reg:30, !aclm:2, !acm:0, !alias:R30, Ac0m;
-        !reg:31, !aclm:3, !acm:1, !alias:R31, Ac1m;
+        !reg:24, !up8:0, !ax0:0, !axlh:0, !alias:R24, Ax0l;
+        !reg:25, !up8:1, !ax1:0, !axlh:1, !alias:R25, Ax1l;
+        !reg:26, !up8:2, !ax0:1, !axh:0, !axlh:2, !alias:R26, Ax0h;
+        !reg:27, !up8:3, !ax1:1, !axh:1, !axlh:3, !alias:R27, Ax1h;
+        !reg:28, !up8:4, !aclm:0, !alias:R28, Ac0l;
+        !reg:29, !up8:5, !aclm:1, !alias:R29, Ac1l;
+        !reg:30, !up8:6, !aclm:2, !acm:0, !alias:R30, Ac0m;
+        !reg:31, !up8:7, !aclm:3, !acm:1, !alias:R31, Ac1m;
         !ac:0, Ac0;
         !ac:1, Ac1;
         !ax:0, Ax0;
@@ -385,7 +405,7 @@ pub mod ext {
 
     pub struct L<D, S>(pub D, pub S);
 
-    impl<D: RegAxLH, S: RegAr> ExtendedOpcode for L<D, S> {
+    impl<D: RegUpper8, S: RegAr> ExtendedOpcode for L<D, S> {
         fn extended_opc(self) -> u8 {
             0b0100_0000 | (self.0.index() << 3) | self.1.index()
         }
@@ -393,7 +413,7 @@ pub mod ext {
 
     pub struct Ln<D, S>(pub D, pub S);
 
-    impl<D: RegAxLH, S: RegAr> ExtendedOpcode for Ln<D, S> {
+    impl<D: RegUpper8, S: RegAr> ExtendedOpcode for Ln<D, S> {
         fn extended_opc(self) -> u8 {
             0b0100_0100 | (self.0.index() << 3) | self.1.index()
         }
@@ -801,7 +821,7 @@ impl Emitter {
         self.eext(0b0111_1010 | d.index(), ext);
     }
 
-    pub fn decm(&mut self, d: impl RegAc, ext: impl ExtendedOpcode) {
+    pub fn decm(&mut self, d: impl RegAcM, ext: impl ExtendedOpcode) {
         self.eext(0b0111_1000 | d.index(), ext);
     }
 
@@ -833,7 +853,7 @@ impl Emitter {
         self.eext(0b0111_0110 | d.index(), ext)
     }
 
-    pub fn incm(&mut self, d: impl RegAc, ext: impl ExtendedOpcode) {
+    pub fn incm(&mut self, d: impl RegAcM, ext: impl ExtendedOpcode) {
         self.eext(0b0111_0100 | d.index(), ext)
     }
 
@@ -853,19 +873,19 @@ impl Emitter {
         self.e(0b0000_1000_0000_0000 | ((d.index() as u16) << 8) | i as u16)
     }
 
-    pub fn lrr(&mut self, d: impl RegAxLH, s: impl RegAr) {
+    pub fn lrr(&mut self, d: impl Reg, s: impl RegAr) {
         self.e(0b0001_1000_0000_0000 | ((s.index() as u16) << 5) | d.index() as u16)
     }
 
-    pub fn lrrd(&mut self, d: impl RegAxLH, s: impl RegAr) {
+    pub fn lrrd(&mut self, d: impl Reg, s: impl RegAr) {
         self.e(0b0001_1000_1000_0000 | ((s.index() as u16) << 5) | d.index() as u16)
     }
 
-    pub fn lrri(&mut self, d: impl RegAxLH, s: impl RegAr) {
+    pub fn lrri(&mut self, d: impl Reg, s: impl RegAr) {
         self.e(0b0001_1001_0000_0000 | ((s.index() as u16) << 5) | d.index() as u16)
     }
 
-    pub fn lrrn(&mut self, d: impl RegAxLH, s: impl RegAr) {
+    pub fn lrrn(&mut self, d: impl Reg, s: impl RegAr) {
         self.e(0b0001_1001_1000_0000 | ((s.index() as u16) << 5) | d.index() as u16)
     }
 

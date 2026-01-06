@@ -28,7 +28,7 @@ static struct {
     uint32_t test_data_len;
     struct state got;
     struct state expected;
-  } fail_info[32];
+  } fail_info[1024];
   int fail_len;
   bool has_failed_test;
   int failed_tests;
@@ -138,6 +138,10 @@ static void cbk_init (struct metastate_init* meta) {
 static void cbk_test (struct metastate_test* meta) {
   memcpy(&test_meta, meta, sizeof(test_meta));
 
+  if (status.has_failed_test) {
+    status.failed_tests += 1;
+  }
+
   status.has_failed_test = false;
   status.failed_cases = 0;
   status.passed_cases = 0;
@@ -164,10 +168,7 @@ static bool cbk_case (struct metastate_case* meta) {
   bool should_continue = true;
 
   if (!is_expected) {
-    if (!status.has_failed_test) {
-      status.has_failed_test = true;
-      status.failed_tests += 1;
-    }
+    status.has_failed_test = true;
     status.total_failed_cases += 1;
     status.failed_cases += 1;
 
@@ -203,8 +204,12 @@ static bool cbk_case (struct metastate_case* meta) {
 }
 
 static void cbk_timeout (struct metastate_case* meta) {
-  printf("TODO: timeout\n");;
-  while(1);
+  status.failed_tests += 1;
+  status.has_failed_test = true;
+  status.total_failed_cases += status.total_cases - status.passed_cases - status.failed_cases;
+
+  status.cases_since_display = 0;
+  display();
 }
 
 int main() {

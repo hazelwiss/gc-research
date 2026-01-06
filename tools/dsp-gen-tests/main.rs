@@ -4,7 +4,10 @@
 
 use rand::{Rng, SeedableRng};
 use std::path::PathBuf;
-use tools::dspemit::{Cond, Emitter, ExtendedOpcode, ExtendedOpcode7, ext};
+use tools::{
+    dsp::InputState,
+    dspemit::{Cond, Emitter, ExtendedOpcode, ExtendedOpcode7, ext, regs},
+};
 
 const SYSTEM_MEM: usize = 24 << 20;
 // At least ensure 5MiB of system memory is not taken up by a single test.
@@ -19,12 +22,6 @@ const SEED: [u8; 32] = [
 struct Test {
     name: &'static str,
     body: fn(&mut Emitter, &mut rand::rngs::SmallRng, u16),
-    // If the test is custom and if it is custom, how many of them are there.
-    //
-    // A custom test is one which does not make use of the generated prologue/epilogue code
-    // and completely defines its own input/output code. Although the output code will always
-    // remain the same most likely.
-    custom: Option<usize>,
 }
 
 impl Test {
@@ -32,11 +29,7 @@ impl Test {
         name: &'static str,
         body: fn(&mut Emitter, &mut rand::rngs::SmallRng, u16),
     ) -> Self {
-        Self {
-            name,
-            body,
-            custom: None,
-        }
+        Self { name, body }
     }
 }
 
@@ -384,14 +377,667 @@ const TESTS: &[Test] = &[
         e.nx(ext::Mv(r.random::<u8>(), r.random::<u8>()))
     }),
     Test::new("nr", |e, r, _| e.nx(ext::Nr(r.random::<u8>()))),
+    // load/store main operations
+    Test::new("sr-lr", |e, _, _| {
+        for i in 1..32 {
+            e.sr(0, i);
+            e.lr(i as u8, i);
+        }
+    }),
+    Test::new("sr-out-of-bounds", |e, _, _| {
+        e.sr(0, 0x2000);
+    }),
+    Test::new("lr-out-of-bounds", |e, _, _| {
+        e.lr(0, 0x2000);
+    }),
+    Test::new("ilrr", |e, _, _| {
+        for i in 1..32 {
+            e.lri(regs::Ar0, i);
+            e.ilrr(true, regs::Ar0);
+            e.mrr(i as u8, regs::Ac1m);
+        }
+    }),
+    Test::new("ilrr-out-of-bounds", |e, _, _| {
+        e.lr(0, 0x1000);
+    }),
+    Test::new("ilrrd", |e, _, _| {
+        e.lri(regs::Ar0, 31);
+        for i in 1..32 {
+            e.ilrrd(true, regs::Ar0);
+            e.mrr(i as u8, regs::Ac1m);
+        }
+    }),
+    Test::new("ilrrd-underflow", |e, _, _| {
+        e.lri(regs::Ar0, 0);
+        e.ilrrd(true, regs::Ar0);
+    }),
+    Test::new("ilrri", |e, _, _| {
+        e.lri(regs::Ar0, 0);
+        for i in 1..32 {
+            e.ilrri(true, regs::Ar0);
+            e.mrr(i as u8, regs::Ac1m);
+        }
+    }),
+    Test::new("ilrri-overflow-out-of-bounds", |e, _, _| {
+        e.lri(regs::Ar0, 0xffff);
+        for i in 1..32 {
+            e.ilrri(true, regs::Ar0);
+            e.mrr(i as u8, regs::Ac1m);
+        }
+    }),
+    Test::new("ilrrn", |e, _, _| {
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar1, 0);
+        e.lri(regs::Ar2, 0);
+        e.lri(regs::Ar3, 0);
+        e.lri(regs::Ix0, 0);
+        e.lri(regs::Ix1, 1);
+        e.lri(regs::Ix2, 32);
+        e.lri(regs::Ix3, 64);
+        for i in 8..12 {
+            e.ilrrn(true, i - 8);
+            e.mrr(i, regs::Ac1m);
+        }
+    }),
+    Test::new("ilrrn-overflow", |e, _, _| {
+        e.lri(regs::Ar0, 1);
+        e.lri(regs::Ix0, 0xffff);
+        e.ilrrn(true, 0);
+    }),
+    Test::new("srr-lrr", |e, _, _| {
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar1, 1);
+        e.lri(regs::Ar2, 2);
+        e.lri(regs::Ar3, 3);
+        for i in 4..32 {
+            e.srr(i, i);
+            e.lrr(i, i);
+        }
+    }),
+    Test::new("srr-out-of-bounds", |e, _, _| {
+        e.lri(regs::Ar0, 0x2000);
+        e.srr(0, 0);
+    }),
+    Test::new("lrr-out-of-bounds", |e, _, _| {
+        e.lri(regs::Ar0, 0x2000);
+        e.lrr(0, 0);
+    }),
+    Test::new("srrd-lrrd", |e, _, _| {
+        e.lri(regs::Ar0, 31);
+        e.lri(regs::Ar1, 31);
+        for i in 2..32 {
+            e.srrd(regs::Ar0, i);
+            e.lrrd(i, regs::Ar1);
+        }
+    }),
+    Test::new("srrd-out-of-bounds", |e, _, _| {
+        e.lri(regs::Ar0, 0x2000);
+        e.srrd(0, 0);
+    }),
+    Test::new("srrd-underflow", |e, _, _| {
+        e.lri(regs::Ar0, 0);
+        e.srrd(0, 0);
+    }),
+    Test::new("lrrd-out-of-bounds", |e, _, _| {
+        e.lri(regs::Ar0, 0x2000);
+        e.lrrd(0, 0);
+    }),
+    Test::new("lrrd-underflow", |e, _, _| {
+        e.lri(regs::Ar0, 0);
+        e.lrrd(0, 0);
+    }),
+    Test::new("srri-lrri", |e, _, _| {
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar1, 0);
+        for i in 2..32 {
+            e.srri(regs::Ar0, i);
+            e.lrri(i, regs::Ar1);
+        }
+    }),
+    Test::new("srri-overflow-out-of-bounds", |e, _, _| {
+        e.lri(regs::Ar0, 0xffff);
+        e.srri(regs::Ar0, regs::Wr0);
+    }),
+    Test::new("lrri-overflow-out-of-bounds", |e, _, _| {
+        e.lri(regs::Ar0, 0xffff);
+        e.lrri(regs::Wr0, regs::Ar0);
+    }),
+    Test::new("srrn-lrrn", |e, _, _| {
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar1, 0);
+        e.lri(regs::Ar2, 0);
+        e.lri(regs::Ar3, 0);
+        e.lri(regs::Ix0, 0);
+        e.lri(regs::Ix1, 1);
+        e.lri(regs::Ix2, 32);
+        e.lri(regs::Ix3, 64);
+        for i in 8..12 {
+            e.srri(i, i);
+            e.lrri(i, i);
+        }
+    }),
+    Test::new("srrn-overflow", |e, _, _| {
+        e.lri(regs::Ar0, 1);
+        e.lri(regs::Ix0, 0xffff);
+        e.srrn(0, 0);
+    }),
+    Test::new("lrrn-overflow", |e, _, _| {
+        e.lri(regs::Ar0, 1);
+        e.lri(regs::Ix0, 0xffff);
+        e.lrrn(1, 0);
+    }),
+    // load/store extended operations
+    Test::new("s-l", |e, r, _| {
+        let ar = r.random::<u8>();
+        let s = r.random::<u8>();
+        e.lri(ar, r.random_range(0..0x1000));
+        e.nx(ext::S(ar, s));
+        e.mrr(regs::Ac0m, ar);
+        e.decm(regs::Ac0m, ext::Nop);
+        e.mrr(ar, regs::Ac0m);
+        e.nx(ext::L(0, ar));
+    }),
+    Test::new("sn-ln", |e, r, _| {
+        let ar: u8 = r.random_range(0..4);
+        let s = r.random::<u8>();
+        e.lri(ar, r.random_range(0..0x1000));
+        // Load IX register
+        e.lri(ar + 4, r.random_range(0..0x1000));
+        e.nx(ext::Sn(ar, s));
+        e.clr(false, ext::Nop);
+        e.clr(true, ext::Nop);
+        e.mrr(regs::Ac0m, ar);
+        // Load IX register
+        e.mrr(regs::Ac1m, ar + 4);
+        e.sub(regs::Ac0, ext::Nop);
+        e.mrr(ar, regs::Ac0m);
+        e.nx(ext::Ln(0, ar));
+    }),
+    Test::new("ls", |e, r, _| {
+        // copy over one value to another
+        for _ in 0..4 {
+            e.si(0, r.random());
+            e.si(1, r.random());
+            e.si(2, r.random());
+            e.si(3, r.random());
+        }
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 4);
+        for i in 0..4 {
+            e.nx(ext::Ls(i, i % 2 != 0));
+            e.mrr(20 + i, 30 + i % 2);
+        }
+
+        for i in 8..12 {
+            e.lr(i, 4 + i as u16);
+        }
+
+        // read and store from same location
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 0);
+        e.lri(regs::Ax0l, r.random());
+        e.lri(regs::Ac0m, r.random());
+        e.nx(ext::Ls(0, false));
+    }),
+    Test::new("sl", |e, r, _| {
+        // copy over one value to another
+        for _ in 0..4 {
+            e.si(0, r.random());
+            e.si(1, r.random());
+            e.si(2, r.random());
+            e.si(3, r.random());
+        }
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 4);
+        for i in 0..4 {
+            e.nx(ext::Sl(i % 2 != 0, i));
+            e.mrr(20 + i, 30 + i % 2);
+        }
+
+        for i in 8..12 {
+            e.lr(i, 4 + i as u16);
+        }
+
+        // read and store from same location
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 0);
+        e.lri(regs::Ax0l, r.random());
+        e.lri(regs::Ac0m, r.random());
+        e.nx(ext::Sl(false, 0));
+    }),
+    Test::new("lsn", |e, r, _| {
+        e.lri(regs::Ix0, r.random_range(0..64));
+        // copy over one value to another
+        for _ in 0..4 {
+            e.si(0, r.random());
+            e.si(1, r.random());
+            e.si(2, r.random());
+            e.si(3, r.random());
+        }
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 4);
+        for i in 0..4 {
+            e.nx(ext::Lsn(i, i % 2 != 0));
+            e.mrr(20 + i, 30 + i % 2);
+        }
+
+        for i in 8..12 {
+            e.lr(i, 4 + i as u16);
+        }
+
+        // read and store from same location
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 0);
+        e.lri(regs::Ax0l, r.random());
+        e.lri(regs::Ac0m, r.random());
+        e.nx(ext::Lsn(0, false));
+    }),
+    Test::new("sln", |e, r, _| {
+        e.lri(regs::Ix0, r.random_range(0..64));
+        // copy over one value to another
+        for _ in 0..4 {
+            e.si(0, r.random());
+            e.si(1, r.random());
+            e.si(2, r.random());
+            e.si(3, r.random());
+        }
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 4);
+        for i in 0..4 {
+            e.nx(ext::Sln(i % 2 != 0, i));
+            e.mrr(20 + i, 30 + i % 2);
+        }
+
+        for i in 8..12 {
+            e.lr(i, 4 + i as u16);
+        }
+
+        // read and store from same location
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 0);
+        e.lri(regs::Ax0l, r.random());
+        e.lri(regs::Ac0m, r.random());
+        e.nx(ext::Sln(false, 0));
+    }),
+    Test::new("lsm", |e, r, _| {
+        e.lri(regs::Ix3, r.random_range(0..64));
+        // copy over one value to another
+        for _ in 0..4 {
+            e.si(0, r.random());
+            e.si(1, r.random());
+            e.si(2, r.random());
+            e.si(3, r.random());
+        }
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 4);
+        for i in 0..4 {
+            e.nx(ext::Lsm(i, i % 2 != 0));
+            e.mrr(20 + i, 30 + i % 2);
+        }
+
+        for i in 8..12 {
+            e.lr(i, 4 + i as u16);
+        }
+
+        // read and store from same location
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 0);
+        e.lri(regs::Ax0l, r.random());
+        e.lri(regs::Ac0m, r.random());
+        e.nx(ext::Lsm(0, false));
+    }),
+    Test::new("slm", |e, r, _| {
+        e.lri(regs::Ix3, r.random_range(0..64));
+        // copy over one value to another
+        for _ in 0..4 {
+            e.si(0, r.random());
+            e.si(1, r.random());
+            e.si(2, r.random());
+            e.si(3, r.random());
+        }
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 4);
+        for i in 0..4 {
+            e.nx(ext::Slm(i % 2 != 0, i));
+            e.mrr(20 + i, 30 + i % 2);
+        }
+
+        for i in 8..12 {
+            e.lr(i, 4 + i as u16);
+        }
+
+        // read and store from same location
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 0);
+        e.lri(regs::Ax0l, r.random());
+        e.lri(regs::Ac0m, r.random());
+        e.nx(ext::Slm(false, 0));
+    }),
+    Test::new("lsnm", |e, r, _| {
+        e.lri(regs::Ix0, r.random_range(0..64));
+        e.lri(regs::Ix3, r.random_range(0..64));
+        // copy over one value to another
+        for _ in 0..4 {
+            e.si(0, r.random());
+            e.si(1, r.random());
+            e.si(2, r.random());
+            e.si(3, r.random());
+        }
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 4);
+        for i in 0..4 {
+            e.nx(ext::Lsnm(i, i % 2 != 0));
+            e.mrr(20 + i, 30 + i % 2);
+        }
+
+        for i in 8..12 {
+            e.lr(i, 4 + i as u16);
+        }
+
+        // read and store from same location
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 0);
+        e.lri(regs::Ax0l, r.random());
+        e.lri(regs::Ac0m, r.random());
+        e.nx(ext::Lsnm(0, false));
+    }),
+    Test::new("slnm", |e, r, _| {
+        e.lri(regs::Ix0, r.random_range(0..64));
+        e.lri(regs::Ix3, r.random_range(0..64));
+        // copy over one value to another
+        for _ in 0..4 {
+            e.si(0, r.random());
+            e.si(1, r.random());
+            e.si(2, r.random());
+            e.si(3, r.random());
+        }
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 4);
+        for i in 0..4 {
+            e.nx(ext::Slnm(i % 2 != 0, i));
+            e.mrr(20 + i, 30 + i % 2);
+        }
+
+        for i in 8..12 {
+            e.lr(i, 4 + i as u16);
+        }
+
+        // read and store from same location
+        e.lri(regs::Ar0, 0);
+        e.lri(regs::Ar3, 0);
+        e.lri(regs::Ax0l, r.random());
+        e.lri(regs::Ac0m, r.random());
+        e.nx(ext::Slnm(false, 0));
+    }),
+    Test::new("ld", |e, r, _| {
+        let adr0 = r.random_range(0..255);
+        let adr1 = r.random_range(0..255);
+        let ar = r.random::<u8>();
+        e.si(adr0, r.random());
+        e.si(adr1, r.random());
+        e.lri(ar, adr0 as u16);
+        e.lri(regs::Ar3, adr1 as u16);
+        e.nx(ext::Ld(r.random::<bool>(), r.random::<bool>(), ar));
+    }),
+    Test::new("ldax", |e, r, _| {
+        let adr0 = r.random_range(0..255);
+        let adr1 = r.random_range(0..255);
+        let ar = r.random::<u8>();
+        e.si(adr0, r.random());
+        e.si(adr1, r.random());
+        e.lri(ar, adr0 as u16);
+        e.lri(regs::Ar3, adr1 as u16);
+        e.nx(ext::Ldax(r.random::<bool>(), ar));
+    }),
+    Test::new("ldn", |e, r, _| {
+        let adr0 = r.random_range(0..255);
+        let adr1 = r.random_range(0..255);
+        let ar = r.random::<u8>();
+        e.si(adr0, r.random());
+        e.si(adr1, r.random());
+        e.lri(ar, adr0 as u16);
+        e.lri(regs::Ar3, adr1 as u16);
+        e.nx(ext::Ldn(r.random::<bool>(), r.random::<bool>(), ar));
+    }),
+    Test::new("ldaxn", |e, r, _| {
+        let adr0 = r.random_range(0..255);
+        let adr1 = r.random_range(0..255);
+        let ar = r.random::<u8>();
+        e.si(adr0, r.random());
+        e.si(adr1, r.random());
+        e.lri(ar, adr0 as u16);
+        e.lri(regs::Ar3, adr1 as u16);
+        e.nx(ext::Ldaxn(r.random::<bool>(), ar));
+    }),
+    Test::new("ldm", |e, r, _| {
+        let adr0 = r.random_range(0..255);
+        let adr1 = r.random_range(0..255);
+        let ar = r.random::<u8>();
+        e.si(adr0, r.random());
+        e.si(adr1, r.random());
+        e.lri(ar, adr0 as u16);
+        e.lri(regs::Ar3, adr1 as u16);
+        e.nx(ext::Ldm(r.random::<bool>(), r.random::<bool>(), ar));
+    }),
+    Test::new("ldaxm", |e, r, _| {
+        let adr0 = r.random_range(0..255);
+        let adr1 = r.random_range(0..255);
+        let ar = r.random::<u8>();
+        e.si(adr0, r.random());
+        e.si(adr1, r.random());
+        e.lri(ar, adr0 as u16);
+        e.lri(regs::Ar3, adr1 as u16);
+        e.nx(ext::Ldaxm(r.random::<bool>(), ar));
+    }),
+    Test::new("ldnm", |e, r, _| {
+        let adr0 = r.random_range(0..255);
+        let adr1 = r.random_range(0..255);
+        let ar = r.random::<u8>();
+        e.si(adr0, r.random());
+        e.si(adr1, r.random());
+        e.lri(ar, adr0 as u16);
+        e.lri(regs::Ar3, adr1 as u16);
+        e.nx(ext::Ldnm(r.random::<bool>(), r.random::<bool>(), ar));
+    }),
+    Test::new("ldaxnm", |e, r, _| {
+        let adr0 = r.random_range(0..255);
+        let adr1 = r.random_range(0..255);
+        let ar = r.random::<u8>();
+        e.si(adr0, r.random());
+        e.si(adr1, r.random());
+        e.lri(ar, adr0 as u16);
+        e.lri(regs::Ar3, adr1 as u16);
+        e.nx(ext::Ldaxnm(r.random::<bool>(), ar));
+    }),
+    Test::new("srs-lrs", |e, r, _| {
+        e.lri(regs::Config, r.random_range(0..=0xf));
+        let ofs = r.random();
+        e.srs(r.random::<u8>(), ofs);
+        e.lrs(r.random::<u8>(), ofs);
+    }),
+    Test::new("srsh-lrs", |e, r, _| {
+        e.lri(regs::Config, r.random_range(0..=0xf));
+        let ofs = r.random();
+        e.srsh(r.random::<bool>(), ofs);
+        e.lrs(r.random::<u8>(), ofs);
+    }),
+    // complex loop testing
+    Test::new("loop-nested", |e, _, _| {
+        e.set16(ext::Nop);
+
+        // nested loop 1
+        e.clr(regs::Ac1, ext::Nop);
+        e.loopi(8);
+        e.loopi(8);
+        e.inc(regs::Ac1, ext::Nop);
+        e.mrr(regs::Wr0, regs::Ac1l);
+
+        // nested loop 2
+        e.clr(regs::Ac1, ext::Nop);
+        e.loopi(8);
+        e.loopi(8);
+        e.loopi(8);
+        e.inc(regs::Ac1, ext::Nop);
+        e.mrr(regs::Wr1, regs::Ac1l);
+
+        // nested loop 3
+        e.clr(regs::Ac1, ext::Nop);
+        e.loopi(8);
+        e.loopi(8);
+        e.loopi(8);
+        e.loopi(8);
+        e.inc(regs::Ac1, ext::Nop);
+        e.mrr(regs::Wr2, regs::Ac1l);
+
+        // nested loop 4
+        e.clr(regs::Ac1, ext::Nop);
+        e.loopi(8);
+        e.loopi(8);
+        e.loopi(8);
+        e.loopi(8);
+        e.loopi(8);
+        e.inc(regs::Ac1, ext::Nop);
+        e.mrr(regs::Wr3, regs::Ac1l);
+    }),
+    // bloop testing
+    Test::new("bloop-basic", |e, _, a| {
+        let len_before = e.len();
+        macro_rules! adr {
+            () => {
+                a + u16::try_from(e.len() - len_before).unwrap()
+            };
+        }
+
+        e.jcc(Cond::Always, a + 3);
+        let call_adr = adr!();
+        e.inc(regs::Ac0, ext::Nop);
+        e.ret(Cond::Always);
+
+        e.set16(ext::Nop);
+
+        // Bloop single instruction
+        e.clr(regs::Ac0, ext::Nop);
+        e.bloopi(32, adr!() + 2);
+        e.inc(regs::Ac0, ext::Nop);
+
+        e.mrr(regs::Ix0, regs::Ac0l);
+
+        // Bloop multiple instructions
+        e.clr(regs::Ac0, ext::Nop);
+        e.clr(regs::Ac1, ext::Nop);
+        e.bloopi(32, adr!() + 4);
+        e.inc(regs::Ac0, ext::Nop);
+        e.inc(regs::Ac1, ext::Nop);
+
+        e.mrr(regs::Ix1, regs::Ac0l);
+        e.mrr(regs::Ix2, regs::Ac1l);
+
+        // Bloop call single
+        e.clr(regs::Ac0, ext::Nop);
+        e.bloopi(32, adr!() + 2);
+        e.callcc(Cond::Always, call_adr);
+
+        e.mrr(regs::Ix3, regs::Ac0l);
+
+        // Bloop call with nop
+        e.clr(regs::Ac0, ext::Nop);
+        e.bloopi(32, adr!() + 3);
+        e.callcc(Cond::Always, call_adr);
+        e.nop();
+    }),
+    Test::new("bloop-nested", |e, _, a| {
+        let len_before = e.len();
+        macro_rules! adr {
+            () => {
+                a + u16::try_from(e.len() - len_before).unwrap()
+            };
+        }
+
+        e.clr(regs::Ac0, ext::Nop);
+        e.clr(regs::Ac1, ext::Nop);
+
+        // Nested 0
+        e.bloopi(32, adr!() + 2);
+        e.bloopi(32, adr!() + 2);
+        e.inc(regs::Ac0, ext::Nop);
+
+        // nested 1
+        e.bloopi(32, adr!() + 5);
+        e.bloopi(32, adr!() + 2);
+        e.inc(regs::Ac0, ext::Nop);
+
+        // nested 2
+        e.bloopi(32, adr!() + 6);
+        e.bloopi(32, adr!() + 2);
+        e.inc(regs::Ac0, ext::Nop);
+        e.nop();
+    }),
+    Test::new("bloop-self", |e, _, a| {
+        let len_before = e.len();
+        macro_rules! adr {
+            () => {
+                a + u16::try_from(e.len() - len_before).unwrap()
+            };
+        }
+
+        e.clr(regs::Ac0, ext::Nop);
+        e.bloopi(32, adr!());
+        e.inc(regs::Ac0, ext::Nop);
+    }),
+    Test::new("bloop-overflow", |e, _, a| {
+        let len_before = e.len();
+        macro_rules! adr {
+            () => {
+                a + u16::try_from(e.len() - len_before).unwrap()
+            };
+        }
+
+        e.clr(regs::Ac0, ext::Nop);
+        e.bloopi(32, adr!() + 10);
+        e.bloopi(32, adr!() + 8);
+        e.bloopi(32, adr!() + 6);
+        e.bloopi(32, adr!() + 4);
+        e.bloopi(32, adr!() + 2);
+        e.inc(regs::Ac0, ext::Nop);
+    }),
+    Test::new("loop-bloop", |e, _, a| {
+        let len_before = e.len();
+        macro_rules! adr {
+            () => {
+                a + u16::try_from(e.len() - len_before).unwrap()
+            };
+        }
+
+        e.clr(regs::Ac0, ext::Nop);
+        e.loop_(32);
+        e.bloopi(32, adr!() + 2);
+        e.inc(regs::Ac0, ext::Nop);
+    }),
+    Test::new("bloop-loop", |e, _, a| {
+        let len_before = e.len();
+        macro_rules! adr {
+            () => {
+                a + u16::try_from(e.len() - len_before).unwrap()
+            };
+        }
+
+        e.clr(regs::Ac0, ext::Nop);
+        e.bloopi(32, adr!() + 2);
+        e.loop_(32);
+        e.inc(regs::Ac0, ext::Nop);
+    }),
+    // Test extended operations colliding with regular operations
+    Test::new("ext-ops-extra", |e, r, _| {
+        e.si(0, r.random());
+        e.clr(regs::Ac0, ext::Nop);
+        e.lri(regs::Ar0, 0);
+
+        e.inc(regs::Ac0, ext::L(regs::Ac0l, regs::Ar0));
+    }),
     // TODO:
-    // - load/store main operations
-    // - load/store extended operations
     // - branching (jmp, call, ret, rti)
-    // - regular bloop tests
-    // - nested bloop tests
-    // - results from extended operations coliding with main operation
     // - exception specific tests
+    // - interrupt testing
 ];
 
 fn main() -> anyhow::Result<()> {
@@ -412,7 +1058,7 @@ fn main() -> anyhow::Result<()> {
 
     let prologue_len = {
         let mut e: Emitter = Emitter::default();
-        tools::dsp::test_prologue(&mut e, Some(tools::dsp::InputState::default()));
+        tools::dsp::test_prologue(&mut e, InputState::default());
         u16::try_from(e.len()).unwrap()
     };
     let epilogue_len = {
@@ -437,9 +1083,8 @@ fn main() -> anyhow::Result<()> {
         println!("generating {}", cur.name);
         let mut e: Emitter = Emitter::default();
 
-        let total_tasks = u16::try_from(cur.custom.unwrap_or(tools::dsp::GEN_DSP_INPUTS))?;
-        e.emit(total_tasks);
-        e.emit(cur.custom.is_some() as u16);
+        let total_tests = u16::try_from(tools::dsp::GEN_DSP_INPUTS)?;
+        e.emit(total_tests);
         assert!(cur.name.len() < 32);
         let mut name = [0u8; 32];
         for (i, b) in cur.name.as_bytes().iter().cloned().enumerate().take(31) {
@@ -450,10 +1095,16 @@ fn main() -> anyhow::Result<()> {
         }
 
         let mut adr = block_start_len;
-        for _ in 0..total_tasks {
-            if cur.custom.is_none() {
-                adr += prologue_len;
+        let mut assumed_size = None;
+        for _ in 0..total_tests {
+            if let Some(assumed_size) = assumed_size
+                && adr + assumed_size > 0x1000
+            {
+                adr = block_start_len;
             }
+
+            let size_start = adr;
+            adr += prologue_len;
 
             let size_before = e.len();
             (cur.body)(&mut e, &mut rand, adr);
@@ -462,9 +1113,13 @@ fn main() -> anyhow::Result<()> {
             e.nop();
 
             adr += u16::try_from(e.len() - size_before).unwrap();
-            if cur.custom.is_none() {
-                adr += epilogue_len;
+            adr += epilogue_len;
+
+            if adr > 0x1000 {
+                panic!("invalid assumption hueristic");
             }
+
+            assumed_size = Some(assumed_size.unwrap_or(adr - size_start));
 
             e.emit_invalid_mark();
         }

@@ -1,19 +1,19 @@
 #![feature(iter_intersperse)]
 
 use std::path::PathBuf;
-use tools::dspemit::Emitter;
+use tools::{dsp::InputState, dspemit::Emitter};
 
 fn main() -> anyhow::Result<()> {
     let output = PathBuf::from("../tests/dsp/shared.h");
 
     let mut e = Emitter::default();
-    tools::dsp::test_prologue(&mut e, None);
+    tools::dsp::test_prologue(&mut e, InputState::random());
     let prologue_len = e.len();
     e.clear();
 
     let mut prologues: Vec<Vec<u16>> = vec![];
     for _ in 0..tools::dsp::GEN_DSP_INPUTS {
-        tools::dsp::test_prologue(&mut e, None);
+        tools::dsp::test_prologue(&mut e, InputState::random());
         prologues.push(e.drain(e.len()));
     }
 

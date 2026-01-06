@@ -221,6 +221,8 @@ int main() {
 
   s32 err = 0;
 
+  printf("attempting to connect to wifi...\n");
+
   // Network initialization.
   struct in_addr local_ip, netmask, gateway;
   if (err = if_configex(&local_ip, &netmask, &gateway, true), err) {

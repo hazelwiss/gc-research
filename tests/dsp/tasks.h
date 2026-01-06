@@ -9,8 +9,6 @@ struct __attribute__((packed)) state {
 
 struct __attribute__((packed, aligned(2))) testheader {
   uint16_t cases;
-  /// if non-zero, then is custom.
-  uint16_t is_custom;
   char name[32];
 };
 

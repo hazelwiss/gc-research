@@ -57,7 +57,13 @@ fn main() -> anyhow::Result<()> {
         &std::net::SocketAddr::parse_ascii(adr.as_bytes()).expect("invalid ip address"),
         Duration::from_secs(5),
     )?;
-    socket.set_read_timeout(Some(Duration::from_secs(3)))?;
+    socket.set_nonblocking(false)?;
+    while let Err(e) = socket.set_read_timeout(Some(Duration::from_secs(3))) {
+        match e.kind() {
+            std::io::ErrorKind::WouldBlock => continue,
+            _ => anyhow::bail!("failed to read from socket: {e}"),
+        }
+    }
 
     let mut read = vec![0; u16::MAX as usize];
     let mut recv_ctr = 0;
