@@ -4,7 +4,7 @@
 
 use std::{
     io::{Read, Write},
-    net::TcpStream,
+    net::{Shutdown, TcpStream},
     path::PathBuf,
     time::Duration,
 };
@@ -45,7 +45,6 @@ fn main() -> anyhow::Result<()> {
             continue;
         }
         if file.path().extension().and_then(|s| s.to_str()) == Some("bin") {
-            println!("{}", file.path().display());
             bins.push(std::fs::read(file.path())?);
         }
     }
@@ -57,8 +56,7 @@ fn main() -> anyhow::Result<()> {
         &std::net::SocketAddr::parse_ascii(adr.as_bytes()).expect("invalid ip address"),
         Duration::from_secs(5),
     )?;
-    socket.set_nonblocking(false)?;
-    while let Err(e) = socket.set_read_timeout(Some(Duration::from_secs(3))) {
+    while let Err(e) = socket.set_read_timeout(Some(Duration::from_secs(60))) {
         match e.kind() {
             std::io::ErrorKind::WouldBlock => continue,
             _ => anyhow::bail!("failed to read from socket: {e}"),
@@ -66,18 +64,13 @@ fn main() -> anyhow::Result<()> {
     }
 
     let mut read = vec![0; u16::MAX as usize];
-    let mut recv_ctr = 0;
     let mut cur_ctr = 0;
     let mut cur_len = 0;
     let mut cur_name = "".to_string();
     let mut outputs = vec![];
     let mut results = vec![];
     loop {
-        recv_ctr += socket.read(&mut read[recv_ctr..]).expect("failed to read");
-
-        if recv_ctr < 5 {
-            continue;
-        }
+        socket.read_exact(&mut read[..5])?;
 
         let package = unsafe {
             core::ptr::from_raw_parts::<Package>(read.as_ptr() as *const _, read.len() - 5)
@@ -85,9 +78,7 @@ fn main() -> anyhow::Result<()> {
                 .unwrap()
         };
 
-        if recv_ctr < u32::from_be(package.len) as usize {
-            continue;
-        }
+        socket.read_exact(&mut read[5..u32::from_be(package.len) as usize])?;
 
         match package.cmd {
             // Begin new fuzzing test
@@ -135,16 +126,21 @@ fn main() -> anyhow::Result<()> {
             // request the next task
             0x80 => {
                 if let Some(bin) = bins.next() {
+                    println!("sending test...");
                     socket.write_all(&u32::try_from(bin.len()).unwrap().to_be_bytes())?;
                     socket.write_all(&bin)?;
+                    socket.flush()?;
+                    println!("sent test")
                 } else {
                     // If no task left, signal that by returning a size of 0.
                     socket.write_all(&0u32.to_be_bytes())?;
+                    socket.flush()?;
                 }
             }
             // request total amount of tasks
             0x90 => {
                 socket.write_all(&bins_len.to_be_bytes())?;
+                socket.flush()?;
             }
             // quit command
             0xff => {
@@ -155,8 +151,6 @@ fn main() -> anyhow::Result<()> {
         }
 
         let to_drain = u32::from_be(package.len);
-
-        recv_ctr -= to_drain as usize;
         read.rotate_left(to_drain as usize);
     }
 
@@ -181,5 +175,6 @@ fn main() -> anyhow::Result<()> {
         std::fs::write(output_file, output_bin)?;
     }
 
+    socket.shutdown(Shutdown::Both)?;
     Ok(())
 }

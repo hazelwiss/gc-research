@@ -1,10 +1,12 @@
 #pragma once
 
+#include "ogc/cache.h"
 #include "runner.h"
 #include "tasks.h"
 
 #include <network.h>
 #include <ogc/consol.h>
+#include <ogc/audio.h>
 #include <ogc/dsp.h>
 #include <ogc/system.h>
 #include <ogc/video.h>
@@ -12,8 +14,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
 
 static GXRModeObj *rmode;
 static void *xfb = NULL;
@@ -31,9 +31,31 @@ static struct {
   size_t bufptr;
 } net = {.bufptr = sizeof(struct cmd)};
 
-static uint32_t tests_ctr;
+static uint32_t cases_ctr;
+
+static void flush(void) {
+  if (net.bufptr <= sizeof(struct cmd)) {
+    return;
+  }
+
+  struct cmd *cmd = (struct cmd *)net.buffer;
+  cmd->cmd = 0x01;
+  cmd->len = net.bufptr;
+
+  for (int i = 0, s = 0; i < net.bufptr; i += s) {
+    s = net_send(net.sk_client, net.buffer, MIN(net.bufptr - i, INT16_MAX), 0);
+    if (s < 0) {
+      printf("failed to send TCP packet...\n");
+      while (1)
+        ;      
+    }
+  }
+  net.bufptr = sizeof(struct cmd);
+}
 
 bool tasks_advance(struct test* ret) {
+  flush();
+  
   // Reserve 20MiB for various task data.
   static uint8_t task_data[2 << 20];
   
@@ -49,7 +71,7 @@ bool tasks_advance(struct test* ret) {
   }
 
   uint32_t response_length = 0;
-  for (int i = 4; i > 0 ; i -= net_read(net.sk_client, ((uint8_t*)&response_length) + (4 - i), i));
+  for (int i = 4; i > 0; i -= net_recv(net.sk_client, ((uint8_t*)&response_length) + (4 - i), i, 0));
   if (response_length > sizeof(task_data)) {
     printf("Not enough data reserved for tasks in fuzzer\n");
     while(1);
@@ -67,7 +89,7 @@ bool tasks_advance(struct test* ret) {
   int i = response_length;
   int s = 0;
   do {
-    s = net_read(net.sk_client, task_data + (response_length - i), MIN(i, INT16_MAX));
+    s = net_recv(net.sk_client, task_data + (response_length - i), MIN(i, INT16_MAX), 0);
     i -= s;
     if (s < 0) {
       printf("failed to read data, error code: %d\n", s);
@@ -75,7 +97,7 @@ bool tasks_advance(struct test* ret) {
     }
   } while(i > 0);
 
-  tests_ctr = 0;
+  cases_ctr = 0;
 
   *ret = (struct test) {
     .header = (struct testheader*)task_data,
@@ -98,9 +120,14 @@ uint64_t tasks_len(void) {
       ;
   }
 
-  uint32_t count;
-  for (int i = 4; i > 0 ; i -= net_read(net.sk_client, ((uint8_t*)&count) + (4 - i), i));
+  uint32_t count = 0;
+  for (int i = 4; i > 0; i -= net_recv(net.sk_client, ((uint8_t*)&count) + (4 - i), i, 0));
   return count;
+}
+
+void tasks_reset() {
+  printf("Fuzzer does not support tasks reset\n");
+  while(1);
 }
 
 uint8_t* task_advance(struct test* task, uint32_t* size, struct state* expected) {
@@ -108,43 +135,24 @@ uint8_t* task_advance(struct test* task, uint32_t* size, struct state* expected)
   memset(expected, 0, sizeof(*expected));
   *size = 0;
 
-  if (tests_ctr >= task->header->cases) {
+  if (cases_ctr >= task->header->cases) {
     return NULL;
   }
 
-  for(int i = 0; i < sizeof(buf) / sizeof(*buf); ++i) {
-    buf[i] = ((uint16_t*)task->impl_data)[task->impl_ctr++];
+  uint16_t len = 0;
+  memcpy(&len, task->impl_data, sizeof(len));
+  task->impl_data += sizeof(len);
 
-    // Stop character
-    if (buf[i] == 0b0000'0000'1010'0000) {
-      tests_ctr += 1;
-      return (uint8_t*)buf;
-    }
-    *size += 2;
+  if (len >= sizeof(buf)) {
+    printf("this is a bug! Fuzzing test too large!\n");
+    while(1);
   }
 
-  printf("Error advancing task\n");
-  while(1);
-}
-
-static void flush(void) {
-  if (net.bufptr <= sizeof(struct cmd)) {
-    return;
-  }
-
-  struct cmd *cmd = (struct cmd *)net.buffer;
-  cmd->cmd = 0x01;
-  cmd->len = net.bufptr;
-
-  for (int i = 0, s = 0; i < net.bufptr; i += s) {
-    s = net_send(net.sk_client, net.buffer, MIN(net.bufptr, INT16_MAX), 0);
-    if (s < 0) {
-      printf("failed to send TCP packet...\n");
-      while (1)
-        ;      
-    }
-  }
-  net.bufptr = sizeof(struct cmd);
+  memcpy(buf, task->impl_data, len);
+  task->impl_data += len;
+  cases_ctr += 1;
+  *size = len;
+  return (uint8_t*)buf;
 }
 
 static struct metastate_init* init_meta;
@@ -158,8 +166,6 @@ static void cbk_test (struct metastate_test* meta) {
   test_meta = meta;
 
   printf("new test: %s\n", meta->name);  
-
-  flush();
 
   static uint8_t response[512];
   struct cmd *cmd = (struct cmd *)&response;
@@ -204,6 +210,10 @@ static void cbk_timeout (struct metastate_case* meta) {
 int main() {
   VIDEO_Init();
   DSP_Init();
+  AUDIO_Init(NULL);
+  AUDIO_StopDMA();
+  AUDIO_SetDSPSampleRate(AI_SAMPLERATE_48KHZ);
+  DSP_Reset();
 
   rmode = VIDEO_GetPreferredMode(NULL);
   xfb = SYS_AllocateFramebuffer(rmode);
@@ -271,6 +281,11 @@ int main() {
       ;
   }
 
+  if (net_fcntl(net.sk_client, 4, O_NONBLOCK) < 0) {
+    printf("Failed to invoke fcntl\n");
+    while(1);
+  }
+
   // Clear terminal
   printf("\e[1;1H\e[2J");
 
@@ -279,8 +294,10 @@ int main() {
   printf("DSP fuzzer; client %s\n", client_addr_print);
   VIDEO_WaitVSync();
 
-  run(cbk_init, cbk_test, cbk_case, cbk_timeout);
+  run(60, cbk_init, cbk_test, cbk_case, cbk_timeout);
+
   flush();
+  printf("Done fuzzing\n");
 
   uint8_t final_cmd_buf[sizeof(struct cmd)];
   struct cmd *final_cmd = (struct cmd *)&final_cmd_buf;

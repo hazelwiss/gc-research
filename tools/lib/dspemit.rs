@@ -669,7 +669,7 @@ impl Emitter {
         self.ed(0b0000_0000_1100_0000 | d.index() as u16, m)
     }
 
-    pub fn andf(&mut self, d: impl RegAc, i: u16) {
+    pub fn andf(&mut self, d: impl RegAcM, i: u16) {
         self.ed(0b0000_0010_1010_0000 | ((d.index() as u16) << 8), i)
     }
 
@@ -1193,11 +1193,6 @@ impl Emitter {
 
     pub fn xorr(&mut self, d: impl RegAcM, s: impl RegAxH, ext: impl ExtendedOpcode7) {
         self.eext7(0b0011_0000 | (s.index() << 1) | d.index(), ext, false);
-    }
-
-    /// Used as a market or 'null' character for end of stream.
-    pub fn emit_invalid_mark(&mut self) {
-        self.e(0b0000_0000_1010_0000);
     }
 }
 

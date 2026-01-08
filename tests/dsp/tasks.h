@@ -23,7 +23,12 @@ struct test {
 
 /// Fetch the next task. Returns `true` if there are more tasks, else `false`.
 bool tasks_advance(struct test*);
+
+/// The amount of tasks.
 uint64_t tasks_len(void);
+
+// Reset the entire task
+void tasks_reset();
 
 /// Advances a single task to point to the next task body.
 // `size` is the amount of bytes in the body.

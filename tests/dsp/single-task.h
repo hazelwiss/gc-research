@@ -6,20 +6,29 @@
 extern uint8_t task_data[];
 extern uint8_t* result_data;
 
+static struct {
+  bool advance;
+  uint32_t cases;
+} tasks_state = { .advance = true };
+
 bool tasks_advance(struct test* ret) {
-  static bool advance = true;
   *ret = (struct test) {
     .header = (struct testheader*)task_data,
     .impl_data = &task_data[sizeof(struct testheader)],
     .impl_ctr = 0,
   };
-  bool should_advance = advance;
-  advance = false;
+  bool should_advance = tasks_state.advance;
+  tasks_state.advance = false;
   return should_advance;
 }
 
 uint64_t tasks_len(void) {
   return 1;
+}
+
+void tasks_reset() {
+  memset(&tasks_state, 0, sizeof(tasks_state));
+  tasks_state.advance = true;
 }
 
 /// Advances a single task to point to the next task body.
@@ -28,29 +37,33 @@ uint64_t tasks_len(void) {
 // If the task is not `custom` in the header then this task will
 // include the prologue and epilogue.
 uint8_t* task_advance(struct test* task, uint32_t* size, struct state* expected_result) {
+  struct __attribute__((packed)) unaligned { uint16_t unaligned; };
+
   static uint16_t buf[0x1000];
-  static uint32_t cases;
   *size = 0;
 
-  if (cases >= task->header->cases) {
+  if (tasks_state.cases >= task->header->cases) {
     return NULL;
   }
 
-  for(int i = 0; i < sizeof(buf) / sizeof(*buf); ++i) {
-    buf[i] = ((uint16_t*)task->impl_data)[task->impl_ctr++];
-    // Stop character
-    if (buf[i] == 0b0000'0000'1010'0000) {
-      if(result_data) {
-        memcpy(expected_result, &((struct state*)result_data)[cases], sizeof(struct state));
-      } else {
-        memset(expected_result, 0, sizeof(struct state));
-      }
-      cases += 1;
-      return (uint8_t*)buf;
-    }
-    *size += 2;
+  uint16_t len = 0;
+  memcpy(&len, task->impl_data, sizeof(len));
+  task->impl_data += sizeof(len);
+
+  if (len >= sizeof(buf)) {
+    printf("this is a bug! Fuzzing test too large!\n");
+    while(1);
   }
 
-  printf("Error advancing task\n");
-  while(1);
+  if(result_data) {
+   memcpy(expected_result, &((struct state*)result_data)[tasks_state.cases], sizeof(struct state));
+  } else {
+   memset(expected_result, 0, sizeof(struct state));
+  }
+
+  memcpy(buf, task->impl_data, len);
+  task->impl_data += len;
+  tasks_state.cases += 1;
+  *size = len;
+  return (uint8_t*)buf;
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "ogc/cache.h"
 #include "tasks.h"
 #include "shared.h"
 
@@ -10,6 +11,7 @@
 #include <time.h>
 #include <ogc/dsp.h>
 #include <ogc/system.h>
+#include <ogcsys.h>
 
 /// Runner initialization meta data
 struct metastate_init {
@@ -51,8 +53,7 @@ typedef void(*callback_test_t)(struct metastate_test*);
 typedef bool(*callback_case_t)(struct metastate_case*);
 typedef void(*callback_case_timeout_t)(struct metastate_case*);
 
-void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_case, callback_case_timeout_t cb_timeout) {
-
+void run(uint32_t timeout, callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_case, callback_case_timeout_t cb_timeout) {
   time_t tc, start = time(NULL);
   uint32_t total_tasks = tasks_len();
 
@@ -113,6 +114,8 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
           cases += 1;
           case_id += 1;
           ptr = task_advance(&test, &len, &cases_test_meta[case_id & cases_test_meta_mask].expected);
+          // TODO: remove later
+          break;
         } else {
           break;
         }
@@ -128,20 +131,20 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
         while(1);
       }
       memcpy(&buf[bufptr], block_end, sizeof(block_end));
-      bufptr = 0;
+      bufptr += sizeof(block_end);
 
+      DSP_Reset();
       dsptask_t dsp_task;
+      memset(&dsp_task, 0, sizeof(dsp_task));
       dsp_task.prio = 255;
       dsp_task.iram_maddr = (void *)MEM_VIRTUAL_TO_PHYSICAL(buf);
-      dsp_task.iram_len = sizeof(buf);
+      dsp_task.iram_len = bufptr;
       dsp_task.iram_addr = 0;
       dsp_task.init_vec = 0x10;
-      dsp_task.res_cb = NULL;
-      dsp_task.req_cb = NULL;
-      dsp_task.init_cb = NULL;
-      dsp_task.done_cb = NULL;
+      DCFlushRange(buf, bufptr);
       DSP_AddTask(&dsp_task);
 
+      bufptr = 0;
       tc = time(NULL);
 
       // Run for all variations of inputs.
@@ -158,7 +161,7 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
           int delay = 0;
           while(!DSP_CheckMailFrom()) {
             if (delay++ > 1000) {
-              if ((uint64_t)difftime(time(NULL), tc) >= 3) {
+              if ((uint64_t)difftime(time(NULL), tc) >= timeout) {
                 cb_timeout(&meta_case);
                 goto timeout;
               } 
@@ -167,18 +170,15 @@ void run(callback_init_t cb_init, callback_test_t cb_test, callback_case_t cb_ca
           }
             
           uint16_t mail = DSP_ReadMailFrom();
-          mail &= 0xffff;
           meta_case.result.gpr[31 - r] = mail;
         }
 
         if (!cb_case(&meta_case)) {
-          DSP_Reset();
           ptr = NULL;
           break;
         }
         continue;
       timeout:
-        DSP_Reset();
         ptr = NULL;
         break;
       }

@@ -3,7 +3,7 @@
 #![feature(iter_array_chunks)]
 
 use rand::{Rng, SeedableRng};
-use std::path::PathBuf;
+use std::{ops::RangeBounds, path::PathBuf};
 use tools::{
     dsp::InputState,
     dspemit::{Cond, Emitter, ExtendedOpcode, ExtendedOpcode7, ext, regs},
@@ -75,6 +75,20 @@ fn cond(r: &mut rand::rngs::SmallRng) -> Cond {
         15 => Cond::Always,
         _ => unreachable!(),
     }
+}
+
+fn iter_all_but_config(range: impl RangeBounds<u8>) -> impl Iterator<Item = u8> {
+    match (range.start_bound(), range.end_bound()) {
+        (std::ops::Bound::Included(l), std::ops::Bound::Included(r)) => *l..*r + 1,
+        (std::ops::Bound::Included(l), std::ops::Bound::Excluded(r)) => *l..*r,
+        _ => unreachable!(),
+    }
+    .filter(|&i| i != 19)
+}
+
+fn rand_all_but_config(r: &mut rand::rngs::SmallRng) -> u8 {
+    let rand = r.random_range(0..=31);
+    if rand == 19 { rand + 1 } else { rand }
 }
 
 const TESTS: &[Test] = &[
@@ -234,7 +248,9 @@ const TESTS: &[Test] = &[
     Test::new("movr", |e, r, _| {
         e.movr(r.random::<bool>(), r.random::<u8>(), ext(r));
     }),
-    Test::new("mrr", |e, r, _| e.mrr(r.random::<u8>(), r.random::<u8>())),
+    Test::new("mrr", |e, r, _| {
+        e.mrr(rand_all_but_config(r), r.random::<u8>())
+    }),
     Test::new("msub", |e, r, _| {
         e.msub(r.random::<bool>(), ext(r));
     }),
@@ -379,9 +395,9 @@ const TESTS: &[Test] = &[
     Test::new("nr", |e, r, _| e.nx(ext::Nr(r.random::<u8>()))),
     // load/store main operations
     Test::new("sr-lr", |e, _, _| {
-        for i in 1..32 {
-            e.sr(0, i);
-            e.lr(i as u8, i);
+        for i in iter_all_but_config(1..32) {
+            e.sr(0, i as u16);
+            e.lr(i, i as u16);
         }
     }),
     Test::new("sr-out-of-bounds", |e, _, _| {
@@ -391,10 +407,10 @@ const TESTS: &[Test] = &[
         e.lr(0, 0x2000);
     }),
     Test::new("ilrr", |e, _, _| {
-        for i in 1..32 {
-            e.lri(regs::Ar0, i);
+        for i in iter_all_but_config(1..32) {
+            e.lri(regs::Ar0, i as u16);
             e.ilrr(true, regs::Ar0);
-            e.mrr(i as u8, regs::Ac1m);
+            e.mrr(i, regs::Ac1m);
         }
     }),
     Test::new("ilrr-out-of-bounds", |e, _, _| {
@@ -402,9 +418,9 @@ const TESTS: &[Test] = &[
     }),
     Test::new("ilrrd", |e, _, _| {
         e.lri(regs::Ar0, 31);
-        for i in 1..32 {
+        for i in iter_all_but_config(1..32) {
             e.ilrrd(true, regs::Ar0);
-            e.mrr(i as u8, regs::Ac1m);
+            e.mrr(i, regs::Ac1m);
         }
     }),
     Test::new("ilrrd-underflow", |e, _, _| {
@@ -413,16 +429,16 @@ const TESTS: &[Test] = &[
     }),
     Test::new("ilrri", |e, _, _| {
         e.lri(regs::Ar0, 0);
-        for i in 1..32 {
+        for i in iter_all_but_config(1..32) {
             e.ilrri(true, regs::Ar0);
-            e.mrr(i as u8, regs::Ac1m);
+            e.mrr(i, regs::Ac1m);
         }
     }),
     Test::new("ilrri-overflow-out-of-bounds", |e, _, _| {
         e.lri(regs::Ar0, 0xffff);
-        for i in 1..32 {
+        for i in iter_all_but_config(1..32) {
             e.ilrri(true, regs::Ar0);
-            e.mrr(i as u8, regs::Ac1m);
+            e.mrr(i, regs::Ac1m);
         }
     }),
     Test::new("ilrrn", |e, _, _| {
@@ -434,7 +450,7 @@ const TESTS: &[Test] = &[
         e.lri(regs::Ix1, 1);
         e.lri(regs::Ix2, 32);
         e.lri(regs::Ix3, 64);
-        for i in 8..12 {
+        for i in iter_all_but_config(8..12) {
             e.ilrrn(true, i - 8);
             e.mrr(i, regs::Ac1m);
         }
@@ -449,7 +465,7 @@ const TESTS: &[Test] = &[
         e.lri(regs::Ar1, 1);
         e.lri(regs::Ar2, 2);
         e.lri(regs::Ar3, 3);
-        for i in 4..32 {
+        for i in iter_all_but_config(4..32) {
             e.srr(i, i);
             e.lrr(i, i);
         }
@@ -463,9 +479,9 @@ const TESTS: &[Test] = &[
         e.lrr(0, 0);
     }),
     Test::new("srrd-lrrd", |e, _, _| {
-        e.lri(regs::Ar0, 31);
-        e.lri(regs::Ar1, 31);
-        for i in 2..32 {
+        e.lri(regs::Ar0, 29);
+        e.lri(regs::Ar1, 29);
+        for i in iter_all_but_config(2..32) {
             e.srrd(regs::Ar0, i);
             e.lrrd(i, regs::Ar1);
         }
@@ -489,7 +505,7 @@ const TESTS: &[Test] = &[
     Test::new("srri-lrri", |e, _, _| {
         e.lri(regs::Ar0, 0);
         e.lri(regs::Ar1, 0);
-        for i in 2..32 {
+        for i in iter_all_but_config(2..32) {
             e.srri(regs::Ar0, i);
             e.lrri(i, regs::Ar1);
         }
@@ -511,7 +527,7 @@ const TESTS: &[Test] = &[
         e.lri(regs::Ix1, 1);
         e.lri(regs::Ix2, 32);
         e.lri(regs::Ix3, 64);
-        for i in 8..12 {
+        for i in iter_all_but_config(8..12) {
             e.srri(i, i);
             e.lrri(i, i);
         }
@@ -1082,6 +1098,7 @@ fn main() -> anyhow::Result<()> {
 
         println!("generating {}", cur.name);
         let mut e: Emitter = Emitter::default();
+        let mut etmp: Emitter = Emitter::default();
 
         let total_tests = u16::try_from(tools::dsp::GEN_DSP_INPUTS)?;
         e.emit(total_tests);
@@ -1106,22 +1123,24 @@ fn main() -> anyhow::Result<()> {
             let size_start = adr;
             adr += prologue_len;
 
-            let size_before = e.len();
-            (cur.body)(&mut e, &mut rand, adr);
+            (cur.body)(&mut etmp, &mut rand, adr);
             // Emit a nop in the case the test runs an exception and needs to return to
             // the instruction after the fault.
-            e.nop();
+            etmp.nop();
 
-            adr += u16::try_from(e.len() - size_before).unwrap();
+            let l = u16::try_from(etmp.len() * 2).unwrap();
+            adr += l;
             adr += epilogue_len;
 
             if adr > 0x1000 {
                 panic!("invalid assumption hueristic");
             }
 
-            assumed_size = Some(assumed_size.unwrap_or(adr - size_start));
+            // First push the size of the test, then push the test
+            e.emit(l);
+            e.append(&mut etmp);
 
-            e.emit_invalid_mark();
+            assumed_size = Some(assumed_size.unwrap_or(adr - size_start));
         }
 
         if e.len() > SYSTEM_MEM - SYSTEM_MEM_LEFT {
@@ -1246,12 +1265,15 @@ fn main() -> anyhow::Result<()> {
                 "dsp-test-{name}.dol: dsp-test-{name}.elf\n",
                 name = test.name
             );
-            contents += &format!("dsp-test-{name}.elf: dsp-test-{name}.o\n", name = test.name);
+            contents += &format!(
+                "dsp-test-{name}.elf: dsp-test-{name}.o ../disasm.o\n",
+                name = test.name
+            );
         }
 
         contents += &format!("dsp-test-all.iso: dsp-test-all.dol {binary_rules}\n");
         contents += "dsp-test-all.dol: dsp-test-all.elf\n";
-        contents += "dsp-test-all.elf: dsp-test-all.o\n";
+        contents += "dsp-test-all.elf: dsp-test-all.o ../disasm.o\n";
         contents += "package: build\n";
         contents += "\t@mkdir -p $(PACKAGE_DIR)/dsp\n";
         for test in TESTS {

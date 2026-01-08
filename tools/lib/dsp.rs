@@ -6,7 +6,7 @@ use rand::Rng;
 
 pub const GEN_DSP_INPUTS: usize = 100;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct InputState {
     pub regs: [u16; 32],
 }
@@ -27,10 +27,10 @@ impl InputState {
 
 pub fn serialize_output(e: &mut Emitter) {
     e.set16(ext::Nop);
-    e.callcc(Cond::Always, 0x12);
-    for i in 0..31 {
+    e.callcc(Cond::Always, 0x14);
+    for i in (0..=30).rev() {
         e.mrr(regs::R31 {}, i);
-        e.callcc(Cond::Always, 0x12);
+        e.callcc(Cond::Always, 0x14);
     }
 }
 
@@ -42,11 +42,14 @@ pub fn block_start(e: &mut Emitter) {
     // True start
     e.jcc(Cond::Always, 0xb2);
 
-    // 0x12 : write r31 to cpu
+    // 0x12: jump to self
+    e.jcc(Cond::Always, 0x12);
+
+    // 0x14: write r31 to cpu
     e.si(0xfc, 0);
-    e.sr(31, 0xfffd);
-    e.lr(31, 0xfffc);
-    e.andf(true, 1 << 15);
+    e.sr(regs::Ac1m, 0xfffd);
+    e.lr(regs::Ac1m, 0xfffc);
+    e.andf(regs::Ac1m, 1 << 15);
     e.jcc(Cond::Lnz, (u16::try_from(e.len()).unwrap()).wrapping_sub(4));
     e.ret(Cond::Always);
 
@@ -89,13 +92,17 @@ pub fn block_start(e: &mut Emitter) {
 pub fn block_end(e: &mut Emitter) {
     // Clear 40-bit mode if enabled.
     e.set16(ext::Nop);
-    // Jump back to IROM
-    e.jcc(Cond::Always, 0x8000);
+    // Enter infinite loop code.
+    e.jcc(Cond::Always, 0x12);
 }
 
 /// Insert test prelude
 pub fn test_prologue(e: &mut Emitter, input: InputState) {
-    for (i, &input) in input.regs.iter().enumerate() {
+    for (i, mut input) in input.regs.into_iter().enumerate() {
+        // Status register cannot have interrupts enabled.
+        if i == 19 {
+            input &= !((1 << 9) | (1 << 11));
+        }
         e.lri(i as u8, input);
     }
 }

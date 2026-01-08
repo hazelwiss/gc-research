@@ -12,9 +12,12 @@ fn main() -> anyhow::Result<()> {
     e.clear();
 
     let mut prologues: Vec<Vec<u16>> = vec![];
+    let mut inputs: Vec<[u16; 32]> = vec![];
     for _ in 0..tools::dsp::GEN_DSP_INPUTS {
-        tools::dsp::test_prologue(&mut e, InputState::random());
+        let input_state = InputState::random();
+        tools::dsp::test_prologue(&mut e, input_state.clone());
         prologues.push(e.drain(e.len()));
+        inputs.push(input_state.regs);
     }
 
     tools::dsp::test_epilogue(&mut e);
@@ -31,6 +34,10 @@ fn main() -> anyhow::Result<()> {
         format!(
             "\
                 #include <stdint.h>\n\
+                \
+                uint16_t test_input[][32] = {{\n\
+                \t{inputs}\n\
+                }};\n\
                 \
                 uint16_t test_prologue[][{prologue_len}] = {{\n\
                 \t{prologue}\n\
@@ -56,6 +63,23 @@ fn main() -> anyhow::Result<()> {
                             "{{ {} }}",
                             v.iter()
                                 .map(|&v| format!("{v:#x}"))
+                                .intersperse(",".to_string())
+                                .collect::<String>()
+                        )
+                    })
+                    .intersperse(",".to_string())
+                    .collect::<String>()
+            },
+            inputs = {
+                inputs
+                    .iter()
+                    .cloned()
+                    .map(|i| {
+                        format!(
+                            "{{{}}}",
+                            i.iter()
+                                .cloned()
+                                .map(|v| format!("{v:#x}"))
                                 .intersperse(",".to_string())
                                 .collect::<String>()
                         )

@@ -1,308 +1,308 @@
 include ../../../common/build.mk
 build: dsp-test-all.iso dsp-test-nop.dol dsp-test-abs.dol dsp-test-add.dol dsp-test-addarn.dol dsp-test-addax.dol dsp-test-addaxl.dol dsp-test-addi.dol dsp-test-addis.dol dsp-test-addp.dol dsp-test-addpaxz.dol dsp-test-addr.dol dsp-test-andc.dol dsp-test-andcf.dol dsp-test-andf.dol dsp-test-andi.dol dsp-test-andr.dol dsp-test-asl.dol dsp-test-asr.dol dsp-test-asrn.dol dsp-test-asrnr.dol dsp-test-asrnrx.dol dsp-test-asr16.dol dsp-test-clr15.dol dsp-test-clr.dol dsp-test-clrl.dol dsp-test-clrp.dol dsp-test-cmp.dol dsp-test-cmpaxh.dol dsp-test-cmpi.dol dsp-test-dec.dol dsp-test-decm.dol dsp-test-iar.dol dsp-test-ifcc.dol dsp-test-inc.dol dsp-test-incm.dol dsp-test-loop.dol dsp-test-loopi.dol dsp-test-lsl.dol dsp-test-lsl16.dol dsp-test-lsr.dol dsp-test-lsrn.dol dsp-test-lsrnr.dol dsp-test-lsrnrx.dol dsp-test-lsr16.dol dsp-test-m0.dol dsp-test-m2.dol dsp-test-madd.dol dsp-test-maddc.dol dsp-test-maddx.dol dsp-test-mov.dol dsp-test-movax.dol dsp-test-movnp.dol dsp-test-movp.dol dsp-test-movpz.dol dsp-test-movr.dol dsp-test-mrr.dol dsp-test-msub.dol dsp-test-msubc.dol dsp-test-msubx.dol dsp-test-mul.dol dsp-test-mulac.dol dsp-test-mulaxh.dol dsp-test-mulc.dol dsp-test-mulcac.dol dsp-test-mulcmv.dol dsp-test-mulcmvz.dol dsp-test-mulmv.dol dsp-test-mulmvz.dol dsp-test-mulx.dol dsp-test-mulxac.dol dsp-test-mulxmv.dol dsp-test-mulxmvz.dol dsp-test-neg.dol dsp-test-not.dol dsp-test-orc.dol dsp-test-ori.dol dsp-test-orr.dol dsp-test-sbclr.dol dsp-test-sbset.dol dsp-test-set15.dol dsp-test-set16.dol dsp-test-set40.dol dsp-test-sub.dol dsp-test-subarn.dol dsp-test-subax.dol dsp-test-subp.dol dsp-test-subr.dol dsp-test-tst.dol dsp-test-tstaxh.dol dsp-test-tstprod.dol dsp-test-xorc.dol dsp-test-xori.dol dsp-test-xorr.dol dsp-test-dr.dol dsp-test-ir.dol dsp-test-mv.dol dsp-test-nr.dol dsp-test-sr-lr.dol dsp-test-sr-out-of-bounds.dol dsp-test-lr-out-of-bounds.dol dsp-test-ilrr.dol dsp-test-ilrr-out-of-bounds.dol dsp-test-ilrrd.dol dsp-test-ilrrd-underflow.dol dsp-test-ilrri.dol dsp-test-ilrri-overflow-out-of-bounds.dol dsp-test-ilrrn.dol dsp-test-ilrrn-overflow.dol dsp-test-srr-lrr.dol dsp-test-srr-out-of-bounds.dol dsp-test-lrr-out-of-bounds.dol dsp-test-srrd-lrrd.dol dsp-test-srrd-out-of-bounds.dol dsp-test-srrd-underflow.dol dsp-test-lrrd-out-of-bounds.dol dsp-test-lrrd-underflow.dol dsp-test-srri-lrri.dol dsp-test-srri-overflow-out-of-bounds.dol dsp-test-lrri-overflow-out-of-bounds.dol dsp-test-srrn-lrrn.dol dsp-test-srrn-overflow.dol dsp-test-lrrn-overflow.dol dsp-test-s-l.dol dsp-test-sn-ln.dol dsp-test-ls.dol dsp-test-sl.dol dsp-test-lsn.dol dsp-test-sln.dol dsp-test-lsm.dol dsp-test-slm.dol dsp-test-lsnm.dol dsp-test-slnm.dol dsp-test-ld.dol dsp-test-ldax.dol dsp-test-ldn.dol dsp-test-ldaxn.dol dsp-test-ldm.dol dsp-test-ldaxm.dol dsp-test-ldnm.dol dsp-test-ldaxnm.dol dsp-test-srs-lrs.dol dsp-test-srsh-lrs.dol dsp-test-loop-nested.dol dsp-test-bloop-basic.dol dsp-test-bloop-nested.dol dsp-test-bloop-self.dol dsp-test-bloop-overflow.dol dsp-test-loop-bloop.dol dsp-test-bloop-loop.dol dsp-test-ext-ops-extra.dol 
 dsp-test-nop.dol: dsp-test-nop.elf
-dsp-test-nop.elf: dsp-test-nop.o
+dsp-test-nop.elf: dsp-test-nop.o ../disasm.o
 dsp-test-abs.dol: dsp-test-abs.elf
-dsp-test-abs.elf: dsp-test-abs.o
+dsp-test-abs.elf: dsp-test-abs.o ../disasm.o
 dsp-test-add.dol: dsp-test-add.elf
-dsp-test-add.elf: dsp-test-add.o
+dsp-test-add.elf: dsp-test-add.o ../disasm.o
 dsp-test-addarn.dol: dsp-test-addarn.elf
-dsp-test-addarn.elf: dsp-test-addarn.o
+dsp-test-addarn.elf: dsp-test-addarn.o ../disasm.o
 dsp-test-addax.dol: dsp-test-addax.elf
-dsp-test-addax.elf: dsp-test-addax.o
+dsp-test-addax.elf: dsp-test-addax.o ../disasm.o
 dsp-test-addaxl.dol: dsp-test-addaxl.elf
-dsp-test-addaxl.elf: dsp-test-addaxl.o
+dsp-test-addaxl.elf: dsp-test-addaxl.o ../disasm.o
 dsp-test-addi.dol: dsp-test-addi.elf
-dsp-test-addi.elf: dsp-test-addi.o
+dsp-test-addi.elf: dsp-test-addi.o ../disasm.o
 dsp-test-addis.dol: dsp-test-addis.elf
-dsp-test-addis.elf: dsp-test-addis.o
+dsp-test-addis.elf: dsp-test-addis.o ../disasm.o
 dsp-test-addp.dol: dsp-test-addp.elf
-dsp-test-addp.elf: dsp-test-addp.o
+dsp-test-addp.elf: dsp-test-addp.o ../disasm.o
 dsp-test-addpaxz.dol: dsp-test-addpaxz.elf
-dsp-test-addpaxz.elf: dsp-test-addpaxz.o
+dsp-test-addpaxz.elf: dsp-test-addpaxz.o ../disasm.o
 dsp-test-addr.dol: dsp-test-addr.elf
-dsp-test-addr.elf: dsp-test-addr.o
+dsp-test-addr.elf: dsp-test-addr.o ../disasm.o
 dsp-test-andc.dol: dsp-test-andc.elf
-dsp-test-andc.elf: dsp-test-andc.o
+dsp-test-andc.elf: dsp-test-andc.o ../disasm.o
 dsp-test-andcf.dol: dsp-test-andcf.elf
-dsp-test-andcf.elf: dsp-test-andcf.o
+dsp-test-andcf.elf: dsp-test-andcf.o ../disasm.o
 dsp-test-andf.dol: dsp-test-andf.elf
-dsp-test-andf.elf: dsp-test-andf.o
+dsp-test-andf.elf: dsp-test-andf.o ../disasm.o
 dsp-test-andi.dol: dsp-test-andi.elf
-dsp-test-andi.elf: dsp-test-andi.o
+dsp-test-andi.elf: dsp-test-andi.o ../disasm.o
 dsp-test-andr.dol: dsp-test-andr.elf
-dsp-test-andr.elf: dsp-test-andr.o
+dsp-test-andr.elf: dsp-test-andr.o ../disasm.o
 dsp-test-asl.dol: dsp-test-asl.elf
-dsp-test-asl.elf: dsp-test-asl.o
+dsp-test-asl.elf: dsp-test-asl.o ../disasm.o
 dsp-test-asr.dol: dsp-test-asr.elf
-dsp-test-asr.elf: dsp-test-asr.o
+dsp-test-asr.elf: dsp-test-asr.o ../disasm.o
 dsp-test-asrn.dol: dsp-test-asrn.elf
-dsp-test-asrn.elf: dsp-test-asrn.o
+dsp-test-asrn.elf: dsp-test-asrn.o ../disasm.o
 dsp-test-asrnr.dol: dsp-test-asrnr.elf
-dsp-test-asrnr.elf: dsp-test-asrnr.o
+dsp-test-asrnr.elf: dsp-test-asrnr.o ../disasm.o
 dsp-test-asrnrx.dol: dsp-test-asrnrx.elf
-dsp-test-asrnrx.elf: dsp-test-asrnrx.o
+dsp-test-asrnrx.elf: dsp-test-asrnrx.o ../disasm.o
 dsp-test-asr16.dol: dsp-test-asr16.elf
-dsp-test-asr16.elf: dsp-test-asr16.o
+dsp-test-asr16.elf: dsp-test-asr16.o ../disasm.o
 dsp-test-clr15.dol: dsp-test-clr15.elf
-dsp-test-clr15.elf: dsp-test-clr15.o
+dsp-test-clr15.elf: dsp-test-clr15.o ../disasm.o
 dsp-test-clr.dol: dsp-test-clr.elf
-dsp-test-clr.elf: dsp-test-clr.o
+dsp-test-clr.elf: dsp-test-clr.o ../disasm.o
 dsp-test-clrl.dol: dsp-test-clrl.elf
-dsp-test-clrl.elf: dsp-test-clrl.o
+dsp-test-clrl.elf: dsp-test-clrl.o ../disasm.o
 dsp-test-clrp.dol: dsp-test-clrp.elf
-dsp-test-clrp.elf: dsp-test-clrp.o
+dsp-test-clrp.elf: dsp-test-clrp.o ../disasm.o
 dsp-test-cmp.dol: dsp-test-cmp.elf
-dsp-test-cmp.elf: dsp-test-cmp.o
+dsp-test-cmp.elf: dsp-test-cmp.o ../disasm.o
 dsp-test-cmpaxh.dol: dsp-test-cmpaxh.elf
-dsp-test-cmpaxh.elf: dsp-test-cmpaxh.o
+dsp-test-cmpaxh.elf: dsp-test-cmpaxh.o ../disasm.o
 dsp-test-cmpi.dol: dsp-test-cmpi.elf
-dsp-test-cmpi.elf: dsp-test-cmpi.o
+dsp-test-cmpi.elf: dsp-test-cmpi.o ../disasm.o
 dsp-test-dec.dol: dsp-test-dec.elf
-dsp-test-dec.elf: dsp-test-dec.o
+dsp-test-dec.elf: dsp-test-dec.o ../disasm.o
 dsp-test-decm.dol: dsp-test-decm.elf
-dsp-test-decm.elf: dsp-test-decm.o
+dsp-test-decm.elf: dsp-test-decm.o ../disasm.o
 dsp-test-iar.dol: dsp-test-iar.elf
-dsp-test-iar.elf: dsp-test-iar.o
+dsp-test-iar.elf: dsp-test-iar.o ../disasm.o
 dsp-test-ifcc.dol: dsp-test-ifcc.elf
-dsp-test-ifcc.elf: dsp-test-ifcc.o
+dsp-test-ifcc.elf: dsp-test-ifcc.o ../disasm.o
 dsp-test-inc.dol: dsp-test-inc.elf
-dsp-test-inc.elf: dsp-test-inc.o
+dsp-test-inc.elf: dsp-test-inc.o ../disasm.o
 dsp-test-incm.dol: dsp-test-incm.elf
-dsp-test-incm.elf: dsp-test-incm.o
+dsp-test-incm.elf: dsp-test-incm.o ../disasm.o
 dsp-test-loop.dol: dsp-test-loop.elf
-dsp-test-loop.elf: dsp-test-loop.o
+dsp-test-loop.elf: dsp-test-loop.o ../disasm.o
 dsp-test-loopi.dol: dsp-test-loopi.elf
-dsp-test-loopi.elf: dsp-test-loopi.o
+dsp-test-loopi.elf: dsp-test-loopi.o ../disasm.o
 dsp-test-lsl.dol: dsp-test-lsl.elf
-dsp-test-lsl.elf: dsp-test-lsl.o
+dsp-test-lsl.elf: dsp-test-lsl.o ../disasm.o
 dsp-test-lsl16.dol: dsp-test-lsl16.elf
-dsp-test-lsl16.elf: dsp-test-lsl16.o
+dsp-test-lsl16.elf: dsp-test-lsl16.o ../disasm.o
 dsp-test-lsr.dol: dsp-test-lsr.elf
-dsp-test-lsr.elf: dsp-test-lsr.o
+dsp-test-lsr.elf: dsp-test-lsr.o ../disasm.o
 dsp-test-lsrn.dol: dsp-test-lsrn.elf
-dsp-test-lsrn.elf: dsp-test-lsrn.o
+dsp-test-lsrn.elf: dsp-test-lsrn.o ../disasm.o
 dsp-test-lsrnr.dol: dsp-test-lsrnr.elf
-dsp-test-lsrnr.elf: dsp-test-lsrnr.o
+dsp-test-lsrnr.elf: dsp-test-lsrnr.o ../disasm.o
 dsp-test-lsrnrx.dol: dsp-test-lsrnrx.elf
-dsp-test-lsrnrx.elf: dsp-test-lsrnrx.o
+dsp-test-lsrnrx.elf: dsp-test-lsrnrx.o ../disasm.o
 dsp-test-lsr16.dol: dsp-test-lsr16.elf
-dsp-test-lsr16.elf: dsp-test-lsr16.o
+dsp-test-lsr16.elf: dsp-test-lsr16.o ../disasm.o
 dsp-test-m0.dol: dsp-test-m0.elf
-dsp-test-m0.elf: dsp-test-m0.o
+dsp-test-m0.elf: dsp-test-m0.o ../disasm.o
 dsp-test-m2.dol: dsp-test-m2.elf
-dsp-test-m2.elf: dsp-test-m2.o
+dsp-test-m2.elf: dsp-test-m2.o ../disasm.o
 dsp-test-madd.dol: dsp-test-madd.elf
-dsp-test-madd.elf: dsp-test-madd.o
+dsp-test-madd.elf: dsp-test-madd.o ../disasm.o
 dsp-test-maddc.dol: dsp-test-maddc.elf
-dsp-test-maddc.elf: dsp-test-maddc.o
+dsp-test-maddc.elf: dsp-test-maddc.o ../disasm.o
 dsp-test-maddx.dol: dsp-test-maddx.elf
-dsp-test-maddx.elf: dsp-test-maddx.o
+dsp-test-maddx.elf: dsp-test-maddx.o ../disasm.o
 dsp-test-mov.dol: dsp-test-mov.elf
-dsp-test-mov.elf: dsp-test-mov.o
+dsp-test-mov.elf: dsp-test-mov.o ../disasm.o
 dsp-test-movax.dol: dsp-test-movax.elf
-dsp-test-movax.elf: dsp-test-movax.o
+dsp-test-movax.elf: dsp-test-movax.o ../disasm.o
 dsp-test-movnp.dol: dsp-test-movnp.elf
-dsp-test-movnp.elf: dsp-test-movnp.o
+dsp-test-movnp.elf: dsp-test-movnp.o ../disasm.o
 dsp-test-movp.dol: dsp-test-movp.elf
-dsp-test-movp.elf: dsp-test-movp.o
+dsp-test-movp.elf: dsp-test-movp.o ../disasm.o
 dsp-test-movpz.dol: dsp-test-movpz.elf
-dsp-test-movpz.elf: dsp-test-movpz.o
+dsp-test-movpz.elf: dsp-test-movpz.o ../disasm.o
 dsp-test-movr.dol: dsp-test-movr.elf
-dsp-test-movr.elf: dsp-test-movr.o
+dsp-test-movr.elf: dsp-test-movr.o ../disasm.o
 dsp-test-mrr.dol: dsp-test-mrr.elf
-dsp-test-mrr.elf: dsp-test-mrr.o
+dsp-test-mrr.elf: dsp-test-mrr.o ../disasm.o
 dsp-test-msub.dol: dsp-test-msub.elf
-dsp-test-msub.elf: dsp-test-msub.o
+dsp-test-msub.elf: dsp-test-msub.o ../disasm.o
 dsp-test-msubc.dol: dsp-test-msubc.elf
-dsp-test-msubc.elf: dsp-test-msubc.o
+dsp-test-msubc.elf: dsp-test-msubc.o ../disasm.o
 dsp-test-msubx.dol: dsp-test-msubx.elf
-dsp-test-msubx.elf: dsp-test-msubx.o
+dsp-test-msubx.elf: dsp-test-msubx.o ../disasm.o
 dsp-test-mul.dol: dsp-test-mul.elf
-dsp-test-mul.elf: dsp-test-mul.o
+dsp-test-mul.elf: dsp-test-mul.o ../disasm.o
 dsp-test-mulac.dol: dsp-test-mulac.elf
-dsp-test-mulac.elf: dsp-test-mulac.o
+dsp-test-mulac.elf: dsp-test-mulac.o ../disasm.o
 dsp-test-mulaxh.dol: dsp-test-mulaxh.elf
-dsp-test-mulaxh.elf: dsp-test-mulaxh.o
+dsp-test-mulaxh.elf: dsp-test-mulaxh.o ../disasm.o
 dsp-test-mulc.dol: dsp-test-mulc.elf
-dsp-test-mulc.elf: dsp-test-mulc.o
+dsp-test-mulc.elf: dsp-test-mulc.o ../disasm.o
 dsp-test-mulcac.dol: dsp-test-mulcac.elf
-dsp-test-mulcac.elf: dsp-test-mulcac.o
+dsp-test-mulcac.elf: dsp-test-mulcac.o ../disasm.o
 dsp-test-mulcmv.dol: dsp-test-mulcmv.elf
-dsp-test-mulcmv.elf: dsp-test-mulcmv.o
+dsp-test-mulcmv.elf: dsp-test-mulcmv.o ../disasm.o
 dsp-test-mulcmvz.dol: dsp-test-mulcmvz.elf
-dsp-test-mulcmvz.elf: dsp-test-mulcmvz.o
+dsp-test-mulcmvz.elf: dsp-test-mulcmvz.o ../disasm.o
 dsp-test-mulmv.dol: dsp-test-mulmv.elf
-dsp-test-mulmv.elf: dsp-test-mulmv.o
+dsp-test-mulmv.elf: dsp-test-mulmv.o ../disasm.o
 dsp-test-mulmvz.dol: dsp-test-mulmvz.elf
-dsp-test-mulmvz.elf: dsp-test-mulmvz.o
+dsp-test-mulmvz.elf: dsp-test-mulmvz.o ../disasm.o
 dsp-test-mulx.dol: dsp-test-mulx.elf
-dsp-test-mulx.elf: dsp-test-mulx.o
+dsp-test-mulx.elf: dsp-test-mulx.o ../disasm.o
 dsp-test-mulxac.dol: dsp-test-mulxac.elf
-dsp-test-mulxac.elf: dsp-test-mulxac.o
+dsp-test-mulxac.elf: dsp-test-mulxac.o ../disasm.o
 dsp-test-mulxmv.dol: dsp-test-mulxmv.elf
-dsp-test-mulxmv.elf: dsp-test-mulxmv.o
+dsp-test-mulxmv.elf: dsp-test-mulxmv.o ../disasm.o
 dsp-test-mulxmvz.dol: dsp-test-mulxmvz.elf
-dsp-test-mulxmvz.elf: dsp-test-mulxmvz.o
+dsp-test-mulxmvz.elf: dsp-test-mulxmvz.o ../disasm.o
 dsp-test-neg.dol: dsp-test-neg.elf
-dsp-test-neg.elf: dsp-test-neg.o
+dsp-test-neg.elf: dsp-test-neg.o ../disasm.o
 dsp-test-not.dol: dsp-test-not.elf
-dsp-test-not.elf: dsp-test-not.o
+dsp-test-not.elf: dsp-test-not.o ../disasm.o
 dsp-test-orc.dol: dsp-test-orc.elf
-dsp-test-orc.elf: dsp-test-orc.o
+dsp-test-orc.elf: dsp-test-orc.o ../disasm.o
 dsp-test-ori.dol: dsp-test-ori.elf
-dsp-test-ori.elf: dsp-test-ori.o
+dsp-test-ori.elf: dsp-test-ori.o ../disasm.o
 dsp-test-orr.dol: dsp-test-orr.elf
-dsp-test-orr.elf: dsp-test-orr.o
+dsp-test-orr.elf: dsp-test-orr.o ../disasm.o
 dsp-test-sbclr.dol: dsp-test-sbclr.elf
-dsp-test-sbclr.elf: dsp-test-sbclr.o
+dsp-test-sbclr.elf: dsp-test-sbclr.o ../disasm.o
 dsp-test-sbset.dol: dsp-test-sbset.elf
-dsp-test-sbset.elf: dsp-test-sbset.o
+dsp-test-sbset.elf: dsp-test-sbset.o ../disasm.o
 dsp-test-set15.dol: dsp-test-set15.elf
-dsp-test-set15.elf: dsp-test-set15.o
+dsp-test-set15.elf: dsp-test-set15.o ../disasm.o
 dsp-test-set16.dol: dsp-test-set16.elf
-dsp-test-set16.elf: dsp-test-set16.o
+dsp-test-set16.elf: dsp-test-set16.o ../disasm.o
 dsp-test-set40.dol: dsp-test-set40.elf
-dsp-test-set40.elf: dsp-test-set40.o
+dsp-test-set40.elf: dsp-test-set40.o ../disasm.o
 dsp-test-sub.dol: dsp-test-sub.elf
-dsp-test-sub.elf: dsp-test-sub.o
+dsp-test-sub.elf: dsp-test-sub.o ../disasm.o
 dsp-test-subarn.dol: dsp-test-subarn.elf
-dsp-test-subarn.elf: dsp-test-subarn.o
+dsp-test-subarn.elf: dsp-test-subarn.o ../disasm.o
 dsp-test-subax.dol: dsp-test-subax.elf
-dsp-test-subax.elf: dsp-test-subax.o
+dsp-test-subax.elf: dsp-test-subax.o ../disasm.o
 dsp-test-subp.dol: dsp-test-subp.elf
-dsp-test-subp.elf: dsp-test-subp.o
+dsp-test-subp.elf: dsp-test-subp.o ../disasm.o
 dsp-test-subr.dol: dsp-test-subr.elf
-dsp-test-subr.elf: dsp-test-subr.o
+dsp-test-subr.elf: dsp-test-subr.o ../disasm.o
 dsp-test-tst.dol: dsp-test-tst.elf
-dsp-test-tst.elf: dsp-test-tst.o
+dsp-test-tst.elf: dsp-test-tst.o ../disasm.o
 dsp-test-tstaxh.dol: dsp-test-tstaxh.elf
-dsp-test-tstaxh.elf: dsp-test-tstaxh.o
+dsp-test-tstaxh.elf: dsp-test-tstaxh.o ../disasm.o
 dsp-test-tstprod.dol: dsp-test-tstprod.elf
-dsp-test-tstprod.elf: dsp-test-tstprod.o
+dsp-test-tstprod.elf: dsp-test-tstprod.o ../disasm.o
 dsp-test-xorc.dol: dsp-test-xorc.elf
-dsp-test-xorc.elf: dsp-test-xorc.o
+dsp-test-xorc.elf: dsp-test-xorc.o ../disasm.o
 dsp-test-xori.dol: dsp-test-xori.elf
-dsp-test-xori.elf: dsp-test-xori.o
+dsp-test-xori.elf: dsp-test-xori.o ../disasm.o
 dsp-test-xorr.dol: dsp-test-xorr.elf
-dsp-test-xorr.elf: dsp-test-xorr.o
+dsp-test-xorr.elf: dsp-test-xorr.o ../disasm.o
 dsp-test-dr.dol: dsp-test-dr.elf
-dsp-test-dr.elf: dsp-test-dr.o
+dsp-test-dr.elf: dsp-test-dr.o ../disasm.o
 dsp-test-ir.dol: dsp-test-ir.elf
-dsp-test-ir.elf: dsp-test-ir.o
+dsp-test-ir.elf: dsp-test-ir.o ../disasm.o
 dsp-test-mv.dol: dsp-test-mv.elf
-dsp-test-mv.elf: dsp-test-mv.o
+dsp-test-mv.elf: dsp-test-mv.o ../disasm.o
 dsp-test-nr.dol: dsp-test-nr.elf
-dsp-test-nr.elf: dsp-test-nr.o
+dsp-test-nr.elf: dsp-test-nr.o ../disasm.o
 dsp-test-sr-lr.dol: dsp-test-sr-lr.elf
-dsp-test-sr-lr.elf: dsp-test-sr-lr.o
+dsp-test-sr-lr.elf: dsp-test-sr-lr.o ../disasm.o
 dsp-test-sr-out-of-bounds.dol: dsp-test-sr-out-of-bounds.elf
-dsp-test-sr-out-of-bounds.elf: dsp-test-sr-out-of-bounds.o
+dsp-test-sr-out-of-bounds.elf: dsp-test-sr-out-of-bounds.o ../disasm.o
 dsp-test-lr-out-of-bounds.dol: dsp-test-lr-out-of-bounds.elf
-dsp-test-lr-out-of-bounds.elf: dsp-test-lr-out-of-bounds.o
+dsp-test-lr-out-of-bounds.elf: dsp-test-lr-out-of-bounds.o ../disasm.o
 dsp-test-ilrr.dol: dsp-test-ilrr.elf
-dsp-test-ilrr.elf: dsp-test-ilrr.o
+dsp-test-ilrr.elf: dsp-test-ilrr.o ../disasm.o
 dsp-test-ilrr-out-of-bounds.dol: dsp-test-ilrr-out-of-bounds.elf
-dsp-test-ilrr-out-of-bounds.elf: dsp-test-ilrr-out-of-bounds.o
+dsp-test-ilrr-out-of-bounds.elf: dsp-test-ilrr-out-of-bounds.o ../disasm.o
 dsp-test-ilrrd.dol: dsp-test-ilrrd.elf
-dsp-test-ilrrd.elf: dsp-test-ilrrd.o
+dsp-test-ilrrd.elf: dsp-test-ilrrd.o ../disasm.o
 dsp-test-ilrrd-underflow.dol: dsp-test-ilrrd-underflow.elf
-dsp-test-ilrrd-underflow.elf: dsp-test-ilrrd-underflow.o
+dsp-test-ilrrd-underflow.elf: dsp-test-ilrrd-underflow.o ../disasm.o
 dsp-test-ilrri.dol: dsp-test-ilrri.elf
-dsp-test-ilrri.elf: dsp-test-ilrri.o
+dsp-test-ilrri.elf: dsp-test-ilrri.o ../disasm.o
 dsp-test-ilrri-overflow-out-of-bounds.dol: dsp-test-ilrri-overflow-out-of-bounds.elf
-dsp-test-ilrri-overflow-out-of-bounds.elf: dsp-test-ilrri-overflow-out-of-bounds.o
+dsp-test-ilrri-overflow-out-of-bounds.elf: dsp-test-ilrri-overflow-out-of-bounds.o ../disasm.o
 dsp-test-ilrrn.dol: dsp-test-ilrrn.elf
-dsp-test-ilrrn.elf: dsp-test-ilrrn.o
+dsp-test-ilrrn.elf: dsp-test-ilrrn.o ../disasm.o
 dsp-test-ilrrn-overflow.dol: dsp-test-ilrrn-overflow.elf
-dsp-test-ilrrn-overflow.elf: dsp-test-ilrrn-overflow.o
+dsp-test-ilrrn-overflow.elf: dsp-test-ilrrn-overflow.o ../disasm.o
 dsp-test-srr-lrr.dol: dsp-test-srr-lrr.elf
-dsp-test-srr-lrr.elf: dsp-test-srr-lrr.o
+dsp-test-srr-lrr.elf: dsp-test-srr-lrr.o ../disasm.o
 dsp-test-srr-out-of-bounds.dol: dsp-test-srr-out-of-bounds.elf
-dsp-test-srr-out-of-bounds.elf: dsp-test-srr-out-of-bounds.o
+dsp-test-srr-out-of-bounds.elf: dsp-test-srr-out-of-bounds.o ../disasm.o
 dsp-test-lrr-out-of-bounds.dol: dsp-test-lrr-out-of-bounds.elf
-dsp-test-lrr-out-of-bounds.elf: dsp-test-lrr-out-of-bounds.o
+dsp-test-lrr-out-of-bounds.elf: dsp-test-lrr-out-of-bounds.o ../disasm.o
 dsp-test-srrd-lrrd.dol: dsp-test-srrd-lrrd.elf
-dsp-test-srrd-lrrd.elf: dsp-test-srrd-lrrd.o
+dsp-test-srrd-lrrd.elf: dsp-test-srrd-lrrd.o ../disasm.o
 dsp-test-srrd-out-of-bounds.dol: dsp-test-srrd-out-of-bounds.elf
-dsp-test-srrd-out-of-bounds.elf: dsp-test-srrd-out-of-bounds.o
+dsp-test-srrd-out-of-bounds.elf: dsp-test-srrd-out-of-bounds.o ../disasm.o
 dsp-test-srrd-underflow.dol: dsp-test-srrd-underflow.elf
-dsp-test-srrd-underflow.elf: dsp-test-srrd-underflow.o
+dsp-test-srrd-underflow.elf: dsp-test-srrd-underflow.o ../disasm.o
 dsp-test-lrrd-out-of-bounds.dol: dsp-test-lrrd-out-of-bounds.elf
-dsp-test-lrrd-out-of-bounds.elf: dsp-test-lrrd-out-of-bounds.o
+dsp-test-lrrd-out-of-bounds.elf: dsp-test-lrrd-out-of-bounds.o ../disasm.o
 dsp-test-lrrd-underflow.dol: dsp-test-lrrd-underflow.elf
-dsp-test-lrrd-underflow.elf: dsp-test-lrrd-underflow.o
+dsp-test-lrrd-underflow.elf: dsp-test-lrrd-underflow.o ../disasm.o
 dsp-test-srri-lrri.dol: dsp-test-srri-lrri.elf
-dsp-test-srri-lrri.elf: dsp-test-srri-lrri.o
+dsp-test-srri-lrri.elf: dsp-test-srri-lrri.o ../disasm.o
 dsp-test-srri-overflow-out-of-bounds.dol: dsp-test-srri-overflow-out-of-bounds.elf
-dsp-test-srri-overflow-out-of-bounds.elf: dsp-test-srri-overflow-out-of-bounds.o
+dsp-test-srri-overflow-out-of-bounds.elf: dsp-test-srri-overflow-out-of-bounds.o ../disasm.o
 dsp-test-lrri-overflow-out-of-bounds.dol: dsp-test-lrri-overflow-out-of-bounds.elf
-dsp-test-lrri-overflow-out-of-bounds.elf: dsp-test-lrri-overflow-out-of-bounds.o
+dsp-test-lrri-overflow-out-of-bounds.elf: dsp-test-lrri-overflow-out-of-bounds.o ../disasm.o
 dsp-test-srrn-lrrn.dol: dsp-test-srrn-lrrn.elf
-dsp-test-srrn-lrrn.elf: dsp-test-srrn-lrrn.o
+dsp-test-srrn-lrrn.elf: dsp-test-srrn-lrrn.o ../disasm.o
 dsp-test-srrn-overflow.dol: dsp-test-srrn-overflow.elf
-dsp-test-srrn-overflow.elf: dsp-test-srrn-overflow.o
+dsp-test-srrn-overflow.elf: dsp-test-srrn-overflow.o ../disasm.o
 dsp-test-lrrn-overflow.dol: dsp-test-lrrn-overflow.elf
-dsp-test-lrrn-overflow.elf: dsp-test-lrrn-overflow.o
+dsp-test-lrrn-overflow.elf: dsp-test-lrrn-overflow.o ../disasm.o
 dsp-test-s-l.dol: dsp-test-s-l.elf
-dsp-test-s-l.elf: dsp-test-s-l.o
+dsp-test-s-l.elf: dsp-test-s-l.o ../disasm.o
 dsp-test-sn-ln.dol: dsp-test-sn-ln.elf
-dsp-test-sn-ln.elf: dsp-test-sn-ln.o
+dsp-test-sn-ln.elf: dsp-test-sn-ln.o ../disasm.o
 dsp-test-ls.dol: dsp-test-ls.elf
-dsp-test-ls.elf: dsp-test-ls.o
+dsp-test-ls.elf: dsp-test-ls.o ../disasm.o
 dsp-test-sl.dol: dsp-test-sl.elf
-dsp-test-sl.elf: dsp-test-sl.o
+dsp-test-sl.elf: dsp-test-sl.o ../disasm.o
 dsp-test-lsn.dol: dsp-test-lsn.elf
-dsp-test-lsn.elf: dsp-test-lsn.o
+dsp-test-lsn.elf: dsp-test-lsn.o ../disasm.o
 dsp-test-sln.dol: dsp-test-sln.elf
-dsp-test-sln.elf: dsp-test-sln.o
+dsp-test-sln.elf: dsp-test-sln.o ../disasm.o
 dsp-test-lsm.dol: dsp-test-lsm.elf
-dsp-test-lsm.elf: dsp-test-lsm.o
+dsp-test-lsm.elf: dsp-test-lsm.o ../disasm.o
 dsp-test-slm.dol: dsp-test-slm.elf
-dsp-test-slm.elf: dsp-test-slm.o
+dsp-test-slm.elf: dsp-test-slm.o ../disasm.o
 dsp-test-lsnm.dol: dsp-test-lsnm.elf
-dsp-test-lsnm.elf: dsp-test-lsnm.o
+dsp-test-lsnm.elf: dsp-test-lsnm.o ../disasm.o
 dsp-test-slnm.dol: dsp-test-slnm.elf
-dsp-test-slnm.elf: dsp-test-slnm.o
+dsp-test-slnm.elf: dsp-test-slnm.o ../disasm.o
 dsp-test-ld.dol: dsp-test-ld.elf
-dsp-test-ld.elf: dsp-test-ld.o
+dsp-test-ld.elf: dsp-test-ld.o ../disasm.o
 dsp-test-ldax.dol: dsp-test-ldax.elf
-dsp-test-ldax.elf: dsp-test-ldax.o
+dsp-test-ldax.elf: dsp-test-ldax.o ../disasm.o
 dsp-test-ldn.dol: dsp-test-ldn.elf
-dsp-test-ldn.elf: dsp-test-ldn.o
+dsp-test-ldn.elf: dsp-test-ldn.o ../disasm.o
 dsp-test-ldaxn.dol: dsp-test-ldaxn.elf
-dsp-test-ldaxn.elf: dsp-test-ldaxn.o
+dsp-test-ldaxn.elf: dsp-test-ldaxn.o ../disasm.o
 dsp-test-ldm.dol: dsp-test-ldm.elf
-dsp-test-ldm.elf: dsp-test-ldm.o
+dsp-test-ldm.elf: dsp-test-ldm.o ../disasm.o
 dsp-test-ldaxm.dol: dsp-test-ldaxm.elf
-dsp-test-ldaxm.elf: dsp-test-ldaxm.o
+dsp-test-ldaxm.elf: dsp-test-ldaxm.o ../disasm.o
 dsp-test-ldnm.dol: dsp-test-ldnm.elf
-dsp-test-ldnm.elf: dsp-test-ldnm.o
+dsp-test-ldnm.elf: dsp-test-ldnm.o ../disasm.o
 dsp-test-ldaxnm.dol: dsp-test-ldaxnm.elf
-dsp-test-ldaxnm.elf: dsp-test-ldaxnm.o
+dsp-test-ldaxnm.elf: dsp-test-ldaxnm.o ../disasm.o
 dsp-test-srs-lrs.dol: dsp-test-srs-lrs.elf
-dsp-test-srs-lrs.elf: dsp-test-srs-lrs.o
+dsp-test-srs-lrs.elf: dsp-test-srs-lrs.o ../disasm.o
 dsp-test-srsh-lrs.dol: dsp-test-srsh-lrs.elf
-dsp-test-srsh-lrs.elf: dsp-test-srsh-lrs.o
+dsp-test-srsh-lrs.elf: dsp-test-srsh-lrs.o ../disasm.o
 dsp-test-loop-nested.dol: dsp-test-loop-nested.elf
-dsp-test-loop-nested.elf: dsp-test-loop-nested.o
+dsp-test-loop-nested.elf: dsp-test-loop-nested.o ../disasm.o
 dsp-test-bloop-basic.dol: dsp-test-bloop-basic.elf
-dsp-test-bloop-basic.elf: dsp-test-bloop-basic.o
+dsp-test-bloop-basic.elf: dsp-test-bloop-basic.o ../disasm.o
 dsp-test-bloop-nested.dol: dsp-test-bloop-nested.elf
-dsp-test-bloop-nested.elf: dsp-test-bloop-nested.o
+dsp-test-bloop-nested.elf: dsp-test-bloop-nested.o ../disasm.o
 dsp-test-bloop-self.dol: dsp-test-bloop-self.elf
-dsp-test-bloop-self.elf: dsp-test-bloop-self.o
+dsp-test-bloop-self.elf: dsp-test-bloop-self.o ../disasm.o
 dsp-test-bloop-overflow.dol: dsp-test-bloop-overflow.elf
-dsp-test-bloop-overflow.elf: dsp-test-bloop-overflow.o
+dsp-test-bloop-overflow.elf: dsp-test-bloop-overflow.o ../disasm.o
 dsp-test-loop-bloop.dol: dsp-test-loop-bloop.elf
-dsp-test-loop-bloop.elf: dsp-test-loop-bloop.o
+dsp-test-loop-bloop.elf: dsp-test-loop-bloop.o ../disasm.o
 dsp-test-bloop-loop.dol: dsp-test-bloop-loop.elf
-dsp-test-bloop-loop.elf: dsp-test-bloop-loop.o
+dsp-test-bloop-loop.elf: dsp-test-bloop-loop.o ../disasm.o
 dsp-test-ext-ops-extra.dol: dsp-test-ext-ops-extra.elf
-dsp-test-ext-ops-extra.elf: dsp-test-ext-ops-extra.o
-dsp-test-all.iso: dsp-test-all.dol nop.bin ../results/nop.result.bin abs.bin ../results/abs.result.bin add.bin ../results/add.result.bin addarn.bin ../results/addarn.result.bin addax.bin ../results/addax.result.bin addaxl.bin ../results/addaxl.result.bin addi.bin ../results/addi.result.bin addis.bin ../results/addis.result.bin addp.bin ../results/addp.result.bin addpaxz.bin ../results/addpaxz.result.bin addr.bin ../results/addr.result.bin andc.bin ../results/andc.result.bin andcf.bin ../results/andcf.result.bin andf.bin ../results/andf.result.bin andi.bin ../results/andi.result.bin andr.bin ../results/andr.result.bin asl.bin ../results/asl.result.bin asr.bin ../results/asr.result.bin asrn.bin ../results/asrn.result.bin asrnr.bin ../results/asrnr.result.bin asrnrx.bin ../results/asrnrx.result.bin asr16.bin ../results/asr16.result.bin clr15.bin ../results/clr15.result.bin clr.bin ../results/clr.result.bin clrl.bin ../results/clrl.result.bin clrp.bin ../results/clrp.result.bin cmp.bin ../results/cmp.result.bin cmpaxh.bin ../results/cmpaxh.result.bin cmpi.bin ../results/cmpi.result.bin dec.bin ../results/dec.result.bin decm.bin ../results/decm.result.bin iar.bin ../results/iar.result.bin ifcc.bin ../results/ifcc.result.bin inc.bin ../results/inc.result.bin incm.bin ../results/incm.result.bin loop.bin ../results/loop.result.bin loopi.bin ../results/loopi.result.bin lsl.bin ../results/lsl.result.bin lsl16.bin ../results/lsl16.result.bin lsr.bin ../results/lsr.result.bin lsrn.bin ../results/lsrn.result.bin lsrnr.bin ../results/lsrnr.result.bin lsrnrx.bin ../results/lsrnrx.result.bin lsr16.bin ../results/lsr16.result.bin m0.bin ../results/m0.result.bin m2.bin ../results/m2.result.bin madd.bin ../results/madd.result.bin maddc.bin ../results/maddc.result.bin maddx.bin ../results/maddx.result.bin mov.bin ../results/mov.result.bin movax.bin ../results/movax.result.bin movnp.bin ../results/movnp.result.bin movp.bin ../results/movp.result.bin movpz.bin ../results/movpz.result.bin movr.bin ../results/movr.result.bin mrr.bin ../results/mrr.result.bin msub.bin ../results/msub.result.bin msubc.bin ../results/msubc.result.bin msubx.bin ../results/msubx.result.bin mul.bin ../results/mul.result.bin mulac.bin ../results/mulac.result.bin mulaxh.bin ../results/mulaxh.result.bin mulc.bin ../results/mulc.result.bin mulcac.bin ../results/mulcac.result.bin mulcmv.bin ../results/mulcmv.result.bin mulcmvz.bin ../results/mulcmvz.result.bin mulmv.bin ../results/mulmv.result.bin mulmvz.bin ../results/mulmvz.result.bin mulx.bin ../results/mulx.result.bin mulxac.bin ../results/mulxac.result.bin mulxmv.bin ../results/mulxmv.result.bin mulxmvz.bin ../results/mulxmvz.result.bin neg.bin ../results/neg.result.bin not.bin ../results/not.result.bin orc.bin ../results/orc.result.bin ori.bin ../results/ori.result.bin orr.bin ../results/orr.result.bin sbclr.bin ../results/sbclr.result.bin sbset.bin ../results/sbset.result.bin set15.bin ../results/set15.result.bin set16.bin ../results/set16.result.bin set40.bin ../results/set40.result.bin sub.bin ../results/sub.result.bin subarn.bin ../results/subarn.result.bin subax.bin ../results/subax.result.bin subp.bin ../results/subp.result.bin subr.bin ../results/subr.result.bin tst.bin ../results/tst.result.bin tstaxh.bin ../results/tstaxh.result.bin tstprod.bin ../results/tstprod.result.bin xorc.bin ../results/xorc.result.bin xori.bin ../results/xori.result.bin xorr.bin ../results/xorr.result.bin dr.bin ../results/dr.result.bin ir.bin ../results/ir.result.bin mv.bin ../results/mv.result.bin nr.bin ../results/nr.result.bin sr-lr.bin sr-out-of-bounds.bin lr-out-of-bounds.bin ilrr.bin ilrr-out-of-bounds.bin ilrrd.bin ilrrd-underflow.bin ilrri.bin ilrri-overflow-out-of-bounds.bin ilrrn.bin ilrrn-overflow.bin srr-lrr.bin srr-out-of-bounds.bin lrr-out-of-bounds.bin srrd-lrrd.bin srrd-out-of-bounds.bin srrd-underflow.bin lrrd-out-of-bounds.bin lrrd-underflow.bin srri-lrri.bin srri-overflow-out-of-bounds.bin lrri-overflow-out-of-bounds.bin srrn-lrrn.bin srrn-overflow.bin lrrn-overflow.bin s-l.bin sn-ln.bin ls.bin sl.bin lsn.bin sln.bin lsm.bin slm.bin lsnm.bin slnm.bin ld.bin ldax.bin ldn.bin ldaxn.bin ldm.bin ldaxm.bin ldnm.bin ldaxnm.bin srs-lrs.bin srsh-lrs.bin loop-nested.bin bloop-basic.bin bloop-nested.bin bloop-self.bin bloop-overflow.bin loop-bloop.bin bloop-loop.bin ext-ops-extra.bin 
+dsp-test-ext-ops-extra.elf: dsp-test-ext-ops-extra.o ../disasm.o
+dsp-test-all.iso: dsp-test-all.dol nop.bin ../results/nop.result.bin abs.bin ../results/abs.result.bin add.bin ../results/add.result.bin addarn.bin ../results/addarn.result.bin addax.bin ../results/addax.result.bin addaxl.bin ../results/addaxl.result.bin addi.bin ../results/addi.result.bin addis.bin ../results/addis.result.bin addp.bin ../results/addp.result.bin addpaxz.bin ../results/addpaxz.result.bin addr.bin ../results/addr.result.bin andc.bin ../results/andc.result.bin andcf.bin ../results/andcf.result.bin andf.bin ../results/andf.result.bin andi.bin ../results/andi.result.bin andr.bin ../results/andr.result.bin asl.bin ../results/asl.result.bin asr.bin ../results/asr.result.bin asrn.bin ../results/asrn.result.bin asrnr.bin ../results/asrnr.result.bin asrnrx.bin ../results/asrnrx.result.bin asr16.bin ../results/asr16.result.bin clr15.bin ../results/clr15.result.bin clr.bin ../results/clr.result.bin clrl.bin ../results/clrl.result.bin clrp.bin ../results/clrp.result.bin cmp.bin ../results/cmp.result.bin cmpaxh.bin ../results/cmpaxh.result.bin cmpi.bin ../results/cmpi.result.bin dec.bin ../results/dec.result.bin decm.bin ../results/decm.result.bin iar.bin ../results/iar.result.bin ifcc.bin ../results/ifcc.result.bin inc.bin ../results/inc.result.bin incm.bin ../results/incm.result.bin loop.bin ../results/loop.result.bin loopi.bin ../results/loopi.result.bin lsl.bin ../results/lsl.result.bin lsl16.bin ../results/lsl16.result.bin lsr.bin ../results/lsr.result.bin lsrn.bin ../results/lsrn.result.bin lsrnr.bin ../results/lsrnr.result.bin lsrnrx.bin ../results/lsrnrx.result.bin lsr16.bin ../results/lsr16.result.bin m0.bin ../results/m0.result.bin m2.bin ../results/m2.result.bin madd.bin ../results/madd.result.bin maddc.bin ../results/maddc.result.bin maddx.bin ../results/maddx.result.bin mov.bin ../results/mov.result.bin movax.bin ../results/movax.result.bin movnp.bin ../results/movnp.result.bin movp.bin ../results/movp.result.bin movpz.bin ../results/movpz.result.bin movr.bin ../results/movr.result.bin mrr.bin ../results/mrr.result.bin msub.bin ../results/msub.result.bin msubc.bin ../results/msubc.result.bin msubx.bin ../results/msubx.result.bin mul.bin ../results/mul.result.bin mulac.bin ../results/mulac.result.bin mulaxh.bin ../results/mulaxh.result.bin mulc.bin ../results/mulc.result.bin mulcac.bin ../results/mulcac.result.bin mulcmv.bin ../results/mulcmv.result.bin mulcmvz.bin ../results/mulcmvz.result.bin mulmv.bin ../results/mulmv.result.bin mulmvz.bin ../results/mulmvz.result.bin mulx.bin ../results/mulx.result.bin mulxac.bin ../results/mulxac.result.bin mulxmv.bin ../results/mulxmv.result.bin mulxmvz.bin ../results/mulxmvz.result.bin neg.bin ../results/neg.result.bin not.bin ../results/not.result.bin orc.bin ../results/orc.result.bin ori.bin ../results/ori.result.bin orr.bin ../results/orr.result.bin sbclr.bin ../results/sbclr.result.bin sbset.bin ../results/sbset.result.bin set15.bin ../results/set15.result.bin set16.bin ../results/set16.result.bin set40.bin ../results/set40.result.bin sub.bin ../results/sub.result.bin subarn.bin ../results/subarn.result.bin subax.bin ../results/subax.result.bin subp.bin ../results/subp.result.bin subr.bin ../results/subr.result.bin tst.bin ../results/tst.result.bin tstaxh.bin ../results/tstaxh.result.bin tstprod.bin ../results/tstprod.result.bin xorc.bin ../results/xorc.result.bin xori.bin ../results/xori.result.bin xorr.bin ../results/xorr.result.bin dr.bin ../results/dr.result.bin ir.bin ../results/ir.result.bin mv.bin ../results/mv.result.bin nr.bin ../results/nr.result.bin sr-lr.bin ../results/sr-lr.result.bin sr-out-of-bounds.bin ../results/sr-out-of-bounds.result.bin lr-out-of-bounds.bin ../results/lr-out-of-bounds.result.bin ilrr.bin ../results/ilrr.result.bin ilrr-out-of-bounds.bin ../results/ilrr-out-of-bounds.result.bin ilrrd.bin ../results/ilrrd.result.bin ilrrd-underflow.bin ../results/ilrrd-underflow.result.bin ilrri.bin ../results/ilrri.result.bin ilrri-overflow-out-of-bounds.bin ../results/ilrri-overflow-out-of-bounds.result.bin ilrrn.bin ../results/ilrrn.result.bin ilrrn-overflow.bin ../results/ilrrn-overflow.result.bin srr-lrr.bin ../results/srr-lrr.result.bin srr-out-of-bounds.bin ../results/srr-out-of-bounds.result.bin lrr-out-of-bounds.bin ../results/lrr-out-of-bounds.result.bin srrd-lrrd.bin ../results/srrd-lrrd.result.bin srrd-out-of-bounds.bin ../results/srrd-out-of-bounds.result.bin srrd-underflow.bin ../results/srrd-underflow.result.bin lrrd-out-of-bounds.bin ../results/lrrd-out-of-bounds.result.bin lrrd-underflow.bin ../results/lrrd-underflow.result.bin srri-lrri.bin ../results/srri-lrri.result.bin srri-overflow-out-of-bounds.bin ../results/srri-overflow-out-of-bounds.result.bin lrri-overflow-out-of-bounds.bin ../results/lrri-overflow-out-of-bounds.result.bin srrn-lrrn.bin ../results/srrn-lrrn.result.bin srrn-overflow.bin ../results/srrn-overflow.result.bin lrrn-overflow.bin ../results/lrrn-overflow.result.bin s-l.bin ../results/s-l.result.bin sn-ln.bin ../results/sn-ln.result.bin ls.bin ../results/ls.result.bin sl.bin ../results/sl.result.bin lsn.bin ../results/lsn.result.bin sln.bin ../results/sln.result.bin lsm.bin ../results/lsm.result.bin slm.bin ../results/slm.result.bin lsnm.bin ../results/lsnm.result.bin slnm.bin ../results/slnm.result.bin ld.bin ../results/ld.result.bin ldax.bin ../results/ldax.result.bin ldn.bin ../results/ldn.result.bin ldaxn.bin ../results/ldaxn.result.bin ldm.bin ../results/ldm.result.bin ldaxm.bin ../results/ldaxm.result.bin ldnm.bin ../results/ldnm.result.bin ldaxnm.bin ../results/ldaxnm.result.bin srs-lrs.bin ../results/srs-lrs.result.bin srsh-lrs.bin ../results/srsh-lrs.result.bin loop-nested.bin ../results/loop-nested.result.bin bloop-basic.bin ../results/bloop-basic.result.bin bloop-nested.bin ../results/bloop-nested.result.bin bloop-self.bin ../results/bloop-self.result.bin bloop-overflow.bin ../results/bloop-overflow.result.bin loop-bloop.bin ../results/loop-bloop.result.bin bloop-loop.bin ../results/bloop-loop.result.bin ext-ops-extra.bin ../results/ext-ops-extra.result.bin 
 dsp-test-all.dol: dsp-test-all.elf
-dsp-test-all.elf: dsp-test-all.o
+dsp-test-all.elf: dsp-test-all.o ../disasm.o
 package: build
 	@mkdir -p $(PACKAGE_DIR)/dsp
 	@cp dsp-test-nop.dol $(PACKAGE_DIR)/dsp/dsp-test-nop.dol
